@@ -20,7 +20,7 @@ mother-daughter trip (Sat 24 Oct – Mon 2 Nov 2026).
   "Did something else", with directions and travel time. All text is English except
   place names and food names, which are in Chinese (handy to show a taxi driver or point
   at on a menu). Food names have a short English hint in brackets.
-- **Journal**: mood hearts, notes, one photo per checkpoint, who wrote it. Browse it all in
+- **Journal**: mood hearts, notes, up to 3 photos per checkpoint (a swipeable strip), who wrote it. Browse it all in
   the Journal book; export/import a JSON backup.
 - **Game bits**: roll a die once per checkpoint for coins and a chance card (lucky break,
   oops, or side quest), earn EXP and level up, and collect 12 stamps.
@@ -81,10 +81,11 @@ supabase/schema.sql   ← tables, RLS policies, RPCs, photo bucket
 1. Create a project at supabase.com.
 2. **SQL Editor → New query** → paste `supabase/schema.sql` → **Run**.
 3. **Authentication → Sign In / Providers** → turn on **Allow anonymous sign-ins**.
-4. **Project Settings → API**: copy the *Project URL* and the *anon public* key.
+4. **Project Settings → API Keys** (or the **Connect** button at the top): copy the *Project URL* and the
+   *publishable key* (`sb_publishable_…`). Never use the `sb_secret_…` key in this app.
 5. In Vercel → Project → **Settings → Environment Variables**, add:
    - `VITE_SUPABASE_URL` = Project URL
-   - `VITE_SUPABASE_ANON_KEY` = anon public key
+   - `VITE_SUPABASE_PUBLISHABLE_KEY` = publishable key (the older `VITE_SUPABASE_ANON_KEY` name also works)
 
    Then redeploy (Vite reads these at build time). For local dev, put the same two lines in
    `.env.local` (see `.env.example`).
@@ -94,7 +95,7 @@ supabase/schema.sql   ← tables, RLS policies, RPCs, photo bucket
 
 ### How the security works
 
-- The anon key is designed to be public; data is protected by Row Level Security.
+- The publishable (anon) key is designed to be public; data is protected by Row Level Security.
 - Each phone signs in anonymously (no email or password). Only members of a trip
   (whoever created it or joined with its code) can read or write its entries and photos.
 - Anyone who has the code can join, so treat the code like a private link.
@@ -110,7 +111,7 @@ limited to members.
 ## Known limits
 
 - In local mode, photos are stored as small (640 px) JPEGs in localStorage. Browsers allow
-  roughly 5 MB per site, so about 50–100 photos fit. Use cloud sync for more.
+  roughly 5 MB per site, so about 50–100 photos fit (up to 3 per checkpoint, 90 in a full trip). Use cloud sync for more.
 - Fonts load from Google Fonts (Press Start 2P, VT323). Offline, the app falls back to
   system fonts.
 - Realtime sync covers new and edited entries. If one phone *undoes* a checkpoint, the
@@ -121,5 +122,4 @@ limited to members.
 ## Ideas for later
 
 - Add a PWA manifest so it can be installed to the home screen and work offline.
-- Allow several photos per checkpoint.
 - Generate an end-of-trip "storybook" page you can share.
