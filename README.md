@@ -89,7 +89,10 @@ supabase/schema.sql   ← tables, RLS policies, RPCs, photo bucket
 
    Then redeploy (Vite reads these at build time). For local dev, put the same two lines in
    `.env.local` (see `.env.example`).
-6. In the app: **⚙ Settings → Start a shared trip** on one phone (tick "Copy this phone's
+6. Optional: set `VITE_REQUIRE_TRIP=true` (in `.env.local` and Vercel) to make the cloud trip mandatory. The game then
+   shows a "Create a trip / Join with a code" screen first and never falls back to saving in the browser. If the
+   Supabase keys are missing it says so instead of silently playing offline. "Leave trip" returns to that screen.
+7. In the app: **⚙ Settings → Start a shared trip** on one phone (tick "Copy this phone's
    journal" to keep what you've written). It shows a 6-letter code. On the other phone:
    **Settings → Join with a code**.
 

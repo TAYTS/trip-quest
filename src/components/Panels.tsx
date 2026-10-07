@@ -4,7 +4,7 @@ import { CHECKPOINTS, DAYS, SLOT_LABEL, findOption, type Checkpoint } from '../d
 import { BADGES, type Entry, type EntryMap } from '../data/game';
 import type { Repo } from '../lib/repo';
 import type { Prefs } from '../lib/prefs';
-import { isCloudConfigured } from '../lib/supabase';
+import { REQUIRE_TRIP, isCloudConfigured } from '../lib/supabase';
 import { fmtDate } from '../lib/time';
 import { Window } from './Window';
 import { Hearts, PixelEmoji } from './Pixel';
@@ -334,7 +334,7 @@ export function SettingsModal({
           <b>Share this code with the other phone:</b>
           <span className="big-code">{repo.label.split('code ')[1]}</span>
           <button type="button" className="btn btn-ghost" onClick={onLeaveTrip}>
-            Leave trip (back to this-device mode)
+            {REQUIRE_TRIP ? 'Leave trip' : 'Leave trip (back to this-device mode)'}
           </button>
         </div>
       )}

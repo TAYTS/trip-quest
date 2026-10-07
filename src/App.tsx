@@ -4,7 +4,7 @@ import { EXP_PER_LEVEL, computeStats, earnedBadges, entryExp, type Entry, type E
 import { UNLOCK_ALL, lastClearedIndex, lockFor } from './data/locks';
 import type { Repo } from './lib/repo';
 import { createLocalRepo, readLocalEntries, replaceLocalEntries } from './lib/localRepo';
-import { isCloudConfigured } from './lib/supabase';
+import { REQUIRE_TRIP, isCloudConfigured } from './lib/supabase';
 import {
   createCloudRepo,
   createTrip,
@@ -20,6 +20,7 @@ import { sfx, setSoundEnabled } from './lib/sfx';
 import { DayLog, DayStrip, Timeline } from './components/Timeline';
 import { QuestModal } from './components/QuestModal';
 import { JournalModal, SettingsModal, StampsModal } from './components/Panels';
+import { TripGate } from './components/TripGate';
 import { Window } from './components/Window';
 import { PixelEmoji, PixelSprite } from './components/Pixel';
 
@@ -44,6 +45,8 @@ export default function App() {
   const [prefs, setPrefsState] = useState<Prefs>(loadPrefs);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [bootError, setBootError] = useState<string | null>(null);
+  // With REQUIRE_TRIP on, true while we wait for the player to create or join a trip.
+  const [needsTrip, setNeedsTrip] = useState(false);
   const [timing, setTiming] = useState(() => tripTiming());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [focusDay, setFocusDay] = useState<number | null>(null);
@@ -89,9 +92,14 @@ export default function App() {
           forgetTrip();
         } catch (e) {
           setBootError(
-            `Couldn't reach the shared trip (${e instanceof Error ? e.message : e}). Showing this phone's journal instead.`,
+            `Couldn't reach the shared trip (${e instanceof Error ? e.message : e}).` +
+              (REQUIRE_TRIP ? ' Check your connection and reload.' : " Showing this phone's journal instead."),
           );
         }
+      }
+      if (REQUIRE_TRIP) {
+        setNeedsTrip(true); // no browser-only fallback: wait for create / join
+        return;
       }
       await activate(createLocalRepo());
     })();
@@ -173,22 +181,44 @@ export default function App() {
     const r = createCloudRepo(trip);
     if (copyLocal) await uploadLocalJournal(r, readLocalEntries());
     await activate(r);
+    setNeedsTrip(false);
+    setBootError(null);
     toast('🔗', `Trip created! Code ${trip.join_code}`);
   }
 
   async function enterTrip(code: string) {
     const trip = await joinTrip(code, authorName(prefs));
     await activate(createCloudRepo(trip));
+    setNeedsTrip(false);
+    setBootError(null);
     toast('🤝', `Joined "${trip.name}"`);
   }
 
   async function leaveTrip() {
     forgetTrip();
+    if (REQUIRE_TRIP) {
+      // Back to the "create or join" screen; nothing from the old trip stays on screen.
+      setModal(null);
+      setEntries({});
+      setRepo(null);
+      setNeedsTrip(true);
+      return;
+    }
     await activate(createLocalRepo());
     toast('📱', 'Back to this-device mode');
   }
 
   // ------------------------------------------------------------ render
+  if (!repo && needsTrip) {
+    return (
+      <TripGate
+        error={bootError}
+        hasLocalJournal={Object.keys(readLocalEntries()).length > 0}
+        onCreate={startTrip}
+        onJoin={enterTrip}
+      />
+    );
+  }
   if (!repo) {
     return (
       <div className="app theme-morning">

@@ -1715,3 +1715,17 @@ textarea.field {
     transition: none !important;
   }
 }
+
+/* trip gate (VITE_REQUIRE_TRIP) */
+.gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px;
+  text-align: center;
+}
+.gate .sync-box {
+  width: 100%;
+  text-align: left;
+}

@@ -67,7 +67,7 @@ const toRow = (tripId: string, e: Entry): Omit<EntryRow, 'updated_at'> & { updat
 });
 
 function client() {
-  if (!supabase) throw new Error('Supabase is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+  if (!supabase) throw new Error('Supabase is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY).');
   return supabase;
 }
 

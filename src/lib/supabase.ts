@@ -11,3 +11,6 @@ export const supabase: SupabaseClient | null =
   url && anonKey ? createClient(url, anonKey, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
 
 export const isCloudConfigured = supabase !== null;
+
+/** When true (VITE_REQUIRE_TRIP=true) the game stays locked behind "create or join a trip": no browser-only mode. */
+export const REQUIRE_TRIP = import.meta.env.VITE_REQUIRE_TRIP === 'true';
