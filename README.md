@@ -113,34 +113,75 @@ limited to members.
 
 ## Ask the Panda (Gemini tips, optional)
 
-Each checkpoint can show an "Ask the Panda" box for food and place suggestions. The browser never sees the
+Each checkpoint can show a "Panda Wishes" box for food and place suggestions. Your party gets 10 wishes
+(shown as stars) per day, shared across the trip; they refill at midnight China time, and a wish is refunded if the
+guide fails. The browser never sees the
 Gemini key: it calls a Supabase Edge Function (`supabase/functions/ask-guide`) that checks the player's login and
-trip membership, counts the question against a daily limit, then calls Gemini.
+trip membership, spends one wish, then calls Gemini. By default it uses Google's
+Antigravity agent with Google Search, which checks the web before answering. This is a preview feature
+and can take up to a minute per question.
 
-1. Get a Gemini API key at https://aistudio.google.com/apikey.
-2. Run the "AI guide quota" part of `supabase/schema.sql` in the Supabase SQL Editor (it is safe to re-run the whole file).
-3. In a terminal, from this folder (install the Supabase CLI first: https://supabase.com/docs/guides/cli):
+### Set it up (once)
+
+1. **Get a Gemini API key.** Open https://aistudio.google.com/apikey, sign in with a Google account and click
+   "Create API key". A Gemini app subscription is not needed (it does not include API access); the free tier is
+   enough to start. Copy the key. Never paste it into the repo, `.env.local`, Vercel, chat or a screenshot.
+2. **Run the wishes SQL.** In the Supabase dashboard open SQL Editor and run `supabase/schema.sql` (the "AI guide
+   quota" part is what is new, including the star counter and refund functions; the file is safe to re-run). This step is manual because this repo keeps the schema
+   in one pasted file, not in `supabase/migrations/`. See "Auto-deploying from GitHub" below to change that.
+3. **Install the Supabase CLI** (https://supabase.com/docs/guides/cli), then run these from the repo folder:
 
    ```bash
    supabase login
    supabase link --project-ref <your-project-ref>      # the part before .supabase.co in your project URL
-   supabase secrets set GEMINI_API_KEY=your-key-here
+   supabase secrets set GEMINI_API_KEY=<paste-your-key-here>
    supabase functions deploy ask-guide
    ```
 
-4. Set `VITE_ENABLE_GUIDE=true` in `.env.local` (and in Vercel, then redeploy).
+   `supabase secrets set` stores the key inside Supabase, where only the function can read it.
+4. **Turn the box on.** Set `VITE_ENABLE_GUIDE=true` in `.env.local` (and in Vercel, then redeploy).
+5. **Check it.** Open a checkpoint in a synced trip and ask a question. If it fails, run
+   `supabase functions logs ask-guide` (or open Edge Functions → ask-guide → Logs in the dashboard).
 
-Optional secrets: `GUIDE_SEARCH` (`off` disables Google Search), `GUIDE_DAILY_LIMIT` (questions per trip per day, default 30) and `GEMINI_MODEL`
-(default `gemini-3.8-flash`). Set them the same way with `supabase secrets set`.
+To replace a leaked or old key later, run `supabase secrets set GEMINI_API_KEY=<new-key>` again. No redeploy needed.
 
-Things to know:
+Optional secrets, set the same way: `GUIDE_DAILY_LIMIT` (wishes per trip per day, default 10; if you set it earlier, delete it to use 10) and
+`GUIDE_GROUNDING` (`agent`, `search` or `none`, see below). The models used are set in
+`supabase/functions/ask-guide/` (`index.ts` and `guide.ts`) and can be overridden with `GEMINI_MODEL` and `GUIDE_AGENT_MODEL`.
+
+### Things to know
 
 - Only the plan text and the question are sent to Gemini. Journal notes and photos are never sent.
 - On Google's free tier, prompts may be used to improve Google products. Paid tier does not.
-- Gemini searches Google before answering and the answer shows its source links. That lowers, but does not remove, the chance of wrong places or hours, so the box still reminds players to check Dianping or Amap.
-- If your Gemini plan rejects the search tool, run `supabase secrets set GUIDE_SEARCH=off` to turn it off (answers then come from the model's memory and are less reliable).
-- To run the function locally: copy `supabase/functions/.env.example` to `supabase/functions/.env`, then
+- Without search, Gemini can invent places or get details wrong. The prompt tells it to stay with well-known places
+  and never give hours or prices, and the box reminds players to check Dianping or Amap.
+- **`GUIDE_GROUNDING=agent` (default):** Google's Antigravity agent preview with only Google Search allowed (no code
+  execution or page fetching). On the free tier AI Studio shows 100 requests/day and 60/minute for it, plus a separate
+  Search allowance. It is slower than a plain model call, and Google has not documented where its source links appear,
+  so source links may be missing. If Google refuses the call, the function retries without any tool and the box says
+  the answer was not checked. Check the AI Studio rate-limit page for your own numbers.
+- **`GUIDE_GROUNDING=search`:** Google Search on a normal Gemini model. Google gives Search no free allowance on its newer
+  models, so it returns a 429 unless billing is enabled on the key's Google Cloud project.
+- **`GUIDE_GROUNDING=none`:** answers come from the model's memory only and can invent places or details. The prompt
+  tells it to stay with well-known places and never give hours or prices.
+- Always check opening hours and the location on Dianping or Amap before you go.
+- Free-tier limits differ per model and can change. Check your own at https://aistudio.google.com/rate-limit.
+- Run the function locally: copy `supabase/functions/.env.example` to `supabase/functions/.env`, then
   `supabase functions serve ask-guide --env-file supabase/functions/.env`.
+
+### Auto-deploying from GitHub (optional)
+
+Supabase can deploy for you on every push, but it only picks up changes in the standard layout:
+SQL files in `supabase/migrations/` (one timestamped file per change) and functions listed in
+`supabase/config.toml`. Two ways to set it up:
+
+- **Supabase's GitHub integration** (Dashboard → Project Settings → Integrations → GitHub): turn on
+  "Deploy to production" and pushes to your main branch apply new migrations and deploy functions.
+- **A GitHub Action** that runs `supabase link`, `supabase db push` and `supabase functions deploy`. It needs
+  the GitHub secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` and your project id.
+
+Secrets such as `GEMINI_API_KEY` are never deployed from the repo, so step 3's `supabase secrets set` stays a
+one-time manual step either way.
 
 ## Known limits
 

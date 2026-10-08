@@ -1,7 +1,7 @@
 // The checkpoint "quest window": pick what you did, roll the chance die, and
 // write the journal entry (mood, note, photo). Locked checkpoints are view-only.
 import { useRef, useState } from 'react';
-import { SLOT_LABEL, dayOf, getOptions, findOption, type Checkpoint } from '../data/itinerary';
+import { CHECKPOINTS, SLOT_LABEL, dayOf, getOptions, findOption, type Checkpoint } from '../data/itinerary';
 import { MAX_PHOTOS, drawChance, findCard, type Entry, type EntryStatus } from '../data/game';
 import type { Lock } from '../data/locks';
 import type { Repo } from '../lib/repo';
@@ -244,6 +244,9 @@ export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo,
             planTitle: chosen.title,
             place: chosen.place,
             desc: chosen.desc,
+            dayPlan: CHECKPOINTS.filter((c) => c.day === cp.day)
+              .map((c) => `${SLOT_LABEL[c.slot].en}: ${c.options[0].title}`)
+              .join('. '),
           }}
           onAddToNotes={
             locked ? undefined : (t) => setNote((n) => (n ? `${n}\n\n` : '') + `Panda tip:\n${t}`.slice(0, 4000))

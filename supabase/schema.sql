@@ -173,7 +173,7 @@ create policy "members delete photos" on storage.objects
 
 -- ------------------------------------------------------------------ AI guide quota
 -- The ask-guide Edge Function calls use_guide_quota() before each Gemini request, so one trip
--- can only ask a limited number of questions per day (China time). Nobody can read or write
+-- can only ask a limited number of questions ("wishes") per day (China time). Nobody can read or write
 -- this table directly: row-level security is on and there are no policies.
 create table if not exists public.guide_usage (
   trip_id uuid not null references public.trips(id) on delete cascade,
@@ -207,6 +207,38 @@ $$;
 
 revoke all on function public.use_guide_quota(uuid, integer) from public, anon;
 grant execute on function public.use_guide_quota(uuid, integer) to authenticated;
+
+-- How many wishes (questions) the trip has used today. Read-only, so the game can show the counter.
+create or replace function public.guide_quota_used(p_trip uuid)
+returns integer language plpgsql security definer set search_path = public as $$
+declare
+  used integer;
+begin
+  if not public.is_trip_member(p_trip) then
+    raise exception 'not a member of this trip' using errcode = '42501';
+  end if;
+  select count into used from public.guide_usage
+    where trip_id = p_trip and day = (now() at time zone 'Asia/Shanghai')::date;
+  return coalesce(used, 0);
+end;
+$$;
+
+-- Gives one wish back when the guide failed to answer (Google down, rate limit, ...).
+create or replace function public.refund_guide_quota(p_trip uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_trip_member(p_trip) then
+    raise exception 'not a member of this trip' using errcode = '42501';
+  end if;
+  update public.guide_usage set count = greatest(count - 1, 0)
+    where trip_id = p_trip and day = (now() at time zone 'Asia/Shanghai')::date;
+end;
+$$;
+
+revoke all on function public.guide_quota_used(uuid) from public, anon;
+revoke all on function public.refund_guide_quota(uuid) from public, anon;
+grant execute on function public.guide_quota_used(uuid) to authenticated;
+grant execute on function public.refund_guide_quota(uuid) to authenticated;
 
 -- ------------------------------------------------------------------ migration
 -- Only needed if you ran an older version of this file (one photo per entry) before.

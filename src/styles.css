@@ -1153,13 +1153,25 @@ textarea.field {
   border-radius: 6px;
   padding: 6px 10px;
 }
-.speech::before {
+/* Tail pointing at the panda: a dark triangle outside the border, plus a white one that opens the border. */
+.speech::before,
+.speech::after {
   content: '';
   position: absolute;
-  left: -11px;
+  border-style: solid;
+  border-color: transparent;
+}
+.speech::before {
+  left: -19px;
   bottom: 10px;
-  border: 8px solid transparent;
+  border-width: 8px;
   border-right-color: var(--ink);
+}
+.speech::after {
+  left: -12px;
+  bottom: 12px;
+  border-width: 6px;
+  border-right-color: #fff;
 }
 .speech b {
   font-family: var(--pixel);
@@ -1254,9 +1266,9 @@ textarea.field {
   color: var(--blue-dark);
 }
 .info-box .transport b {
-  font-weight: normal;
-  font-family: var(--pixel);
-  font-size: 7px;
+  font-weight: bold;
+  font-family: inherit;
+  font-size: inherit;
   margin-right: 4px;
 }
 
@@ -1759,14 +1771,146 @@ textarea.field {
   background: #fff8e1;
 }
 .guide-answer p {
+  line-height: 1.3;
   white-space: pre-wrap;
   margin: 0 0 8px;
 }
 
+.guide-answer .cjk {
+  font-family: var(--cjk);
+  font-size: 0.9em;
+  line-height: 1;
+}
+
 .guide-sources {
-  font-size: 0.8rem;
+  margin: 0 0 8px;
   overflow-wrap: anywhere;
 }
+.guide-sources .guide-sources-label {
+  margin: 0 0 4px;
+  font-weight: bold;
+}
+.guide-sources ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.guide-sources li {
+  margin: 0;
+  padding: 4px 0;
+}
 .guide-sources a {
+  color: var(--ink, #3b2a1a);
+  text-decoration: underline;
+}
+
+.wishes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.wish-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+.wish-star.off {
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+.wish-count {
+  font-size: 0.85rem;
   color: var(--ink-soft);
+}
+
+/* Panda guide: idle bobbing, hopping while it waits for an answer, and thinking dots */
+.guide-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  margin-bottom: 12px;
+}
+.guide-head-text {
+  min-width: 0;
+}
+.guide-head-text .wishes {
+  margin: 4px 0 0;
+}
+.guide-head .section-title {
+  margin: 0;
+}
+.panda-buddy {
+  display: inline-flex;
+  flex: none;
+  animation: panda-bob 2s ease-in-out infinite;
+}
+.panda-buddy.busy {
+  animation: panda-hop 0.5s steps(4) infinite;
+}
+@keyframes panda-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes panda-hop {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  25% {
+    transform: translateY(-6px) rotate(-6deg);
+  }
+  75% {
+    transform: translateY(-6px) rotate(6deg);
+  }
+}
+.guide-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 2px dashed var(--ink, #3b2a1a);
+  background: #fff8e1;
+}
+.thinking-dots {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+.thinking-dots i {
+  width: 8px;
+  height: 8px;
+  background: var(--ink, #3b2a1a);
+  animation: dot-jump 0.9s steps(3) infinite;
+}
+.thinking-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.thinking-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dot-jump {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+}
+
+.guide-answer .guide-list {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+.guide-answer .guide-list li {
+  margin: 0 0 6px;
+  line-height: 1.3;
 }
