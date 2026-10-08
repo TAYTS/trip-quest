@@ -11,6 +11,8 @@ import { Window } from './Window';
 import { Die, Hearts, PixelEmoji, PixelSprite } from './Pixel';
 import { ConfirmButton } from './ConfirmButton';
 import { PhotoCarousel } from './PhotoCarousel';
+import { GuideBox } from './GuideBox';
+import { GUIDE_ENABLED } from '../lib/guide';
 
 interface Props {
   checkpoint: Checkpoint;
@@ -227,6 +229,26 @@ export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo,
             </p>
           )}
         </div>
+      )}
+
+      {GUIDE_ENABLED && repo.tripId && (
+        <GuideBox
+          tripId={repo.tripId}
+          context={{
+            day: day.day,
+            date: day.date,
+            weekday: day.weekday,
+            city: day.city,
+            dayTitle: day.title,
+            slot: SLOT_LABEL[cp.slot].en,
+            planTitle: chosen.title,
+            place: chosen.place,
+            desc: chosen.desc,
+          }}
+          onAddToNotes={
+            locked ? undefined : (t) => setNote((n) => (n ? `${n}\n\n` : '') + `Panda tip:\n${t}`.slice(0, 4000))
+          }
+        />
       )}
 
       {!locked && (

@@ -111,6 +111,37 @@ The schema was tested against Postgres (PGlite) with Supabase-style stubs: membe
 read and write, non-members get nothing, the join code works, and photo-folder access is
 limited to members.
 
+## Ask the Panda (Gemini tips, optional)
+
+Each checkpoint can show an "Ask the Panda" box for food and place suggestions. The browser never sees the
+Gemini key: it calls a Supabase Edge Function (`supabase/functions/ask-guide`) that checks the player's login and
+trip membership, counts the question against a daily limit, then calls Gemini.
+
+1. Get a Gemini API key at https://aistudio.google.com/apikey.
+2. Run the "AI guide quota" part of `supabase/schema.sql` in the Supabase SQL Editor (it is safe to re-run the whole file).
+3. In a terminal, from this folder (install the Supabase CLI first: https://supabase.com/docs/guides/cli):
+
+   ```bash
+   supabase login
+   supabase link --project-ref <your-project-ref>      # the part before .supabase.co in your project URL
+   supabase secrets set GEMINI_API_KEY=your-key-here
+   supabase functions deploy ask-guide
+   ```
+
+4. Set `VITE_ENABLE_GUIDE=true` in `.env.local` (and in Vercel, then redeploy).
+
+Optional secrets: `GUIDE_SEARCH` (`off` disables Google Search), `GUIDE_DAILY_LIMIT` (questions per trip per day, default 30) and `GEMINI_MODEL`
+(default `gemini-3.8-flash`). Set them the same way with `supabase secrets set`.
+
+Things to know:
+
+- Only the plan text and the question are sent to Gemini. Journal notes and photos are never sent.
+- On Google's free tier, prompts may be used to improve Google products. Paid tier does not.
+- Gemini searches Google before answering and the answer shows its source links. That lowers, but does not remove, the chance of wrong places or hours, so the box still reminds players to check Dianping or Amap.
+- If your Gemini plan rejects the search tool, run `supabase secrets set GUIDE_SEARCH=off` to turn it off (answers then come from the model's memory and are less reliable).
+- To run the function locally: copy `supabase/functions/.env.example` to `supabase/functions/.env`, then
+  `supabase functions serve ask-guide --env-file supabase/functions/.env`.
+
 ## Known limits
 
 - In local mode, photos are stored as small (640 px) JPEGs in localStorage. Browsers allow

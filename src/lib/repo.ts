@@ -5,6 +5,8 @@ import type { Entry, EntryMap } from '../data/game';
 export interface Repo {
   kind: 'local' | 'cloud';
   label: string;
+  /** Cloud trips only: the trip's id (needed to ask the AI guide). */
+  tripId?: string;
   loadEntries(): Promise<EntryMap>;
   saveEntry(entry: Entry): Promise<void>;
   deleteEntry(checkpointId: string): Promise<void>;

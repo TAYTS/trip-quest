@@ -1729,3 +1729,44 @@ textarea.field {
   width: 100%;
   text-align: left;
 }
+
+/* ---- Ask the Panda (AI guide) ---- */
+.guide-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.guide-quick .chip {
+  cursor: pointer;
+}
+.guide-quick .chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.guide-form {
+  display: flex;
+  gap: 8px;
+}
+.guide-form .field {
+  flex: 1;
+  min-width: 0;
+}
+.guide-answer {
+  margin-top: 10px;
+  padding: 10px;
+  border: 2px solid var(--ink, #3b2a1a);
+  background: #fff8e1;
+}
+.guide-answer p {
+  white-space: pre-wrap;
+  margin: 0 0 8px;
+}
+
+.guide-sources {
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.guide-sources a {
+  color: var(--ink-soft);
+}

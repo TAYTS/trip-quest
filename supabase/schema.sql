@@ -171,6 +171,43 @@ create policy "members delete photos" on storage.objects
   for delete to authenticated
   using (bucket_id = 'journal-photos' and public.is_trip_member_text((storage.foldername(name))[1]));
 
+-- ------------------------------------------------------------------ AI guide quota
+-- The ask-guide Edge Function calls use_guide_quota() before each Gemini request, so one trip
+-- can only ask a limited number of questions per day (China time). Nobody can read or write
+-- this table directly: row-level security is on and there are no policies.
+create table if not exists public.guide_usage (
+  trip_id uuid not null references public.trips(id) on delete cascade,
+  day     date not null,
+  count   integer not null default 0,
+  primary key (trip_id, day)
+);
+alter table public.guide_usage enable row level security;
+
+-- Counts one question for the trip and returns how many were used today.
+-- Raises 'not a member of this trip' for outsiders and 'daily limit reached' once p_limit is hit.
+create or replace function public.use_guide_quota(p_trip uuid, p_limit integer)
+returns integer language plpgsql security definer set search_path = public as $$
+declare
+  used integer;
+begin
+  if not public.is_trip_member(p_trip) then
+    raise exception 'not a member of this trip' using errcode = '42501';
+  end if;
+  insert into public.guide_usage (trip_id, day, count)
+  values (p_trip, (now() at time zone 'Asia/Shanghai')::date, 1)
+  on conflict (trip_id, day) do update set count = public.guide_usage.count + 1
+    where public.guide_usage.count < p_limit
+  returning count into used;
+  if used is null then
+    raise exception 'daily limit reached' using errcode = 'P0001';
+  end if;
+  return used;
+end;
+$$;
+
+revoke all on function public.use_guide_quota(uuid, integer) from public, anon;
+grant execute on function public.use_guide_quota(uuid, integer) to authenticated;
+
 -- ------------------------------------------------------------------ migration
 -- Only needed if you ran an older version of this file (one photo per entry) before.
 -- Safe to run again.

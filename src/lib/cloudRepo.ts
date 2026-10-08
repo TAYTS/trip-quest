@@ -124,6 +124,7 @@ export function createCloudRepo(trip: CloudTrip): Repo {
   const repo: Repo = {
     kind: 'cloud',
     label: `Synced trip · code ${trip.join_code}`,
+    tripId: trip.id,
 
     async loadEntries() {
       const { data, error } = await sb.from('entries').select('*').eq('trip_id', trip.id);
