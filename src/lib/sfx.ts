@@ -19,11 +19,51 @@ function tone(freq: number, start: number, dur: number, type: OscillatorType = '
   osc.stop(ctx.currentTime + start + dur);
 }
 
+function getCtx(): AudioContext {
+  ctx ??= new AudioContext();
+  // iPhone: by default Web Audio is silenced by the side "silent" switch. This asks Safari (iOS 16.4+) to treat it
+  // like media playback instead. Ignored where unsupported.
+  try {
+    const nav = navigator as Navigator & { audioSession?: { type: string } };
+    if (nav.audioSession) nav.audioSession.type = 'playback';
+  } catch {
+    /* not supported */
+  }
+  return ctx;
+}
+
+// iOS only lets audio start from a real tap. Unlock it on the first touch so later sounds
+// (like the one after a Panda answer arrives) can play.
+if (typeof window !== 'undefined') {
+  const unlock = () => {
+    try {
+      const c = getCtx();
+      if (c.state === 'suspended') void c.resume();
+      const buf = c.createBuffer(1, 1, 22050);
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.connect(c.destination);
+      src.start(0);
+    } catch {
+      /* audio unavailable */
+    }
+    // Keep listening until the browser really lets audio run (iOS counts touchend, not pointerdown).
+    if (ctx?.state === 'running') {
+      window.removeEventListener('touchend', unlock);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('click', unlock);
+    }
+  };
+  window.addEventListener('touchend', unlock, { passive: true });
+  window.addEventListener('pointerdown', unlock, { passive: true });
+  window.addEventListener('click', unlock);
+}
+
 function play(notes: [number, number, number][], wave: OscillatorType = 'square') {
   if (!enabled) return;
   try {
-    ctx ??= new AudioContext();
-    if (ctx.state === 'suspended') void ctx.resume();
+    const c = getCtx();
+    if (c.state === 'suspended') void c.resume();
     notes.forEach(([f, s, d]) => tone(f, s, d, wave));
   } catch {
     /* audio unavailable */
