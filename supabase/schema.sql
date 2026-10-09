@@ -161,15 +161,8 @@ create policy "members read photos" on storage.objects
   for select to authenticated
   using (bucket_id = 'journal-photos' and public.is_trip_member_text((storage.foldername(name))[1]));
 
-drop policy if exists "members upload photos" on storage.objects;
-create policy "members upload photos" on storage.objects
-  for insert to authenticated
-  with check (bucket_id = 'journal-photos' and public.is_trip_member_text((storage.foldername(name))[1]));
-
-drop policy if exists "members delete photos" on storage.objects;
-create policy "members delete photos" on storage.objects
-  for delete to authenticated
-  using (bucket_id = 'journal-photos' and public.is_trip_member_text((storage.foldername(name))[1]));
+-- Upload and delete policies are further down (under "trip recap"), because they also check
+-- that the recap hasn't been made yet.
 
 -- ------------------------------------------------------------------ AI guide quota
 -- The ask-guide Edge Function calls use_guide_quota() before each Gemini request, so one trip
@@ -239,6 +232,111 @@ revoke all on function public.guide_quota_used(uuid) from public, anon;
 revoke all on function public.refund_guide_quota(uuid) from public, anon;
 grant execute on function public.guide_quota_used(uuid) to authenticated;
 grant execute on function public.refund_guide_quota(uuid) to authenticated;
+
+-- ------------------------------------------------------------------ trip recap ("Trip Wrapped")
+-- recap_moments: Gemini's reading of each checkpoint (note mood, feelings, best photo, caption).
+--   Written once per checkpoint by the trip-recap Edge Function; never re-run.
+-- recaps: the finished recap (stats, ranking, personality, closing note), one row per trip.
+--   Once it exists, the journal is read-only (see block_after_recap below), so both phones
+--   always see the same recap.
+create table if not exists public.recap_moments (
+  trip_id        uuid not null references public.trips(id) on delete cascade,
+  checkpoint_id  text not null,
+  analysis       jsonb not null,
+  created_at     timestamptz not null default now(),
+  primary key (trip_id, checkpoint_id)
+);
+create table if not exists public.recaps (
+  trip_id     uuid primary key references public.trips(id) on delete cascade,
+  data        jsonb not null,
+  created_by  uuid default auth.uid(),
+  created_at  timestamptz not null default now()
+);
+alter table public.recap_moments enable row level security;
+alter table public.recaps enable row level security;
+
+drop policy if exists "members read recap moments" on public.recap_moments;
+create policy "members read recap moments" on public.recap_moments
+  for select to authenticated using (public.is_trip_member(trip_id));
+drop policy if exists "members add recap moments" on public.recap_moments;
+create policy "members add recap moments" on public.recap_moments
+  for insert to authenticated with check (public.is_trip_member(trip_id));
+
+drop policy if exists "members read recap" on public.recaps;
+create policy "members read recap" on public.recaps
+  for select to authenticated using (public.is_trip_member(trip_id));
+drop policy if exists "members add recap" on public.recaps;
+create policy "members add recap" on public.recaps
+  for insert to authenticated with check (public.is_trip_member(trip_id));
+-- No update or delete policies: a recap is never changed. delete_recap() below is the only way to remove it.
+
+-- Lets the other phone see the recap (and the journal lock) as soon as it is made.
+do $$
+begin
+  alter publication supabase_realtime add table public.recaps;
+exception when duplicate_object then null;
+end $$;
+
+create or replace function public.trip_has_recap(p_trip uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.recaps where trip_id = p_trip);
+$$;
+create or replace function public.trip_has_recap_text(p_trip text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.recaps where trip_id::text = p_trip);
+$$;
+
+-- Once the recap is made, journal entries can't be added, changed or removed.
+create or replace function public.block_after_recap()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  t uuid;
+begin
+  if tg_op = 'DELETE' then t := old.trip_id; else t := new.trip_id; end if;
+  -- Still allow the whole trip to be deleted (cascade).
+  if public.trip_has_recap(t) and exists (select 1 from public.trips where id = t) then
+    raise exception 'The trip recap is made, so the journal is read-only now.' using errcode = 'P0001';
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+drop trigger if exists entries_locked_after_recap on public.entries;
+create trigger entries_locked_after_recap
+  before insert or update or delete on public.entries
+  for each row execute function public.block_after_recap();
+
+-- Photos: same rule (no new or removed photos after the recap).
+drop policy if exists "members upload photos" on storage.objects;
+create policy "members upload photos" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'journal-photos'
+    and public.is_trip_member_text((storage.foldername(name))[1])
+    and not public.trip_has_recap_text((storage.foldername(name))[1])
+  );
+drop policy if exists "members delete photos" on storage.objects;
+create policy "members delete photos" on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'journal-photos'
+    and public.is_trip_member_text((storage.foldername(name))[1])
+    and not public.trip_has_recap_text((storage.foldername(name))[1])
+  );
+
+-- For test runs: removes the recap and its saved analysis, which unlocks the journal again.
+create or replace function public.delete_recap(p_trip uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_trip_member(p_trip) then
+    raise exception 'not a member of this trip' using errcode = '42501';
+  end if;
+  delete from public.recaps where trip_id = p_trip;
+  delete from public.recap_moments where trip_id = p_trip;
+end;
+$$;
+revoke all on function public.delete_recap(uuid) from public, anon;
+grant execute on function public.delete_recap(uuid) to authenticated;
 
 -- ------------------------------------------------------------------ migration
 -- Only needed if you ran an older version of this file (one photo per entry) before.

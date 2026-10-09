@@ -5,3 +5,6 @@ project_id = "trip-quest"
 [functions.ask-guide]
 # Reject callers who are not signed in, before the function code even runs.
 verify_jwt = true
+
+[functions.trip-recap]
+verify_jwt = true
