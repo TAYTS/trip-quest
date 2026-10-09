@@ -21,15 +21,36 @@ interface Props {
   author: string;
   lock: Lock;
   canUndo: boolean;
+  /** True once the Trip Wrapped recap is made: the journal is read-only from then on. */
+  frozen?: boolean;
   onSave: (entry: Entry) => Promise<void>;
   onClear: (checkpointId: string) => Promise<void>;
   onClose: () => void;
 }
 
-export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo, onSave, onClear, onClose }: Props) {
+export function QuestModal({
+  checkpoint: cp,
+  entry,
+  repo,
+  author,
+  lock,
+  canUndo,
+  frozen = false,
+  onSave,
+  onClear,
+  onClose,
+}: Props) {
   const day = dayOf(cp.day);
   const options = getOptions(cp);
-  const locked = lock.kind !== 'open';
+  const locked = lock.kind !== 'open' || frozen;
+  // Once a checkpoint is cleared or skipped, what you did is fixed; only the journal (hearts, notes,
+  // photos) can still be edited, until the Trip Wrapped is made.
+  const choiceFixed = !!entry;
+  const lockMessage = frozen
+    ? 'Your Trip Wrapped is made, so the journal is read-only now.'
+    : lock.kind !== 'open'
+      ? lock.message
+      : '';
   const [choiceId, setChoiceId] = useState(entry?.choiceId ?? options[0].id);
   const [customTitle, setCustomTitle] = useState(entry?.customTitle ?? '');
   const [mood, setMood] = useState<number | undefined>(entry?.mood);
@@ -114,13 +135,17 @@ export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo,
     }
   }
 
-  const speech = entry
-    ? `You cleared this one${entry.author ? ` (written by ${entry.author})` : ''}. Edit anything you like!`
-    : lock.kind === 'order'
-      ? "That's further down the road! Here's a peek at the plan."
-      : lock.kind === 'date'
-        ? "This day hasn't arrived yet. Here's a peek at the plan."
-        : `${day.title}! Here's the plan for the ${SLOT_LABEL[cp.slot].en.toLowerCase()}.`;
+  const speech = frozen
+    ? entry
+      ? `Here's what ${entry.author ? `${entry.author} wrote` : 'you wrote'}. It's part of your Trip Wrapped now!`
+      : 'Your Trip Wrapped is made, so this stop stays as it is.'
+    : entry
+      ? `You cleared this one${entry.author ? ` (written by ${entry.author})` : ''}. Edit anything you like!`
+      : lock.kind === 'order'
+        ? "That's further down the road! Here's a peek at the plan."
+        : lock.kind === 'date'
+          ? "This day hasn't arrived yet. Here's a peek at the plan."
+          : `${day.title}! Here's the plan for the ${SLOT_LABEL[cp.slot].en.toLowerCase()}.`;
 
   return (
     <Window
@@ -182,27 +207,39 @@ export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo,
 
       {locked && (
         <p className="lock-banner">
-          <PixelEmoji emoji="🔒" size={16} /> {lock.message}
+          <PixelEmoji emoji={frozen ? '🎁' : '🔒'} size={16} /> {lockMessage}
         </p>
       )}
 
-      <h3 className="section-title">{locked ? 'The plan' : 'Choose your path'}</h3>
+      <h3 className="section-title">
+        {entry
+          ? entry.status === 'skipped'
+            ? 'You skipped this one'
+            : 'What you did'
+          : locked
+            ? 'The plan'
+            : 'Choose your path'}
+      </h3>
       <div className="options" role="radiogroup" aria-label="What did you do?">
-        {options.map((op) => (
+        {(choiceFixed ? [chosen] : options).map((op) => (
           <button
             key={op.id}
             type="button"
             role="radio"
-            aria-checked={choiceId === op.id}
-            className={`option ${choiceId === op.id ? 'selected' : ''} kind-${op.kind}`}
+            aria-checked={choiceFixed || choiceId === op.id}
+            aria-disabled={choiceFixed || undefined}
+            className={`option ${choiceFixed || choiceId === op.id ? 'selected' : ''} kind-${op.kind} ${choiceFixed ? 'fixed' : ''}`}
             onClick={() => {
+              if (choiceFixed) return;
               sfx.click();
               setChoiceId(op.id);
             }}
           >
             <PixelEmoji emoji={op.icon} size={32} />
             <span className="option-text">
-              <span className="option-title">{op.title}</span>
+              <span className="option-title">
+                {op.id === 'custom' && entry?.customTitle ? entry.customTitle : op.title}
+              </span>
               {op.place && <span className="option-place">{op.place}</span>}
             </span>
             {op.kind === 'main' && <span className="tag tag-main">PLAN</span>}
@@ -211,7 +248,7 @@ export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo,
         ))}
       </div>
 
-      {choiceId === 'custom' && !locked ? (
+      {choiceId === 'custom' && choiceFixed ? null : choiceId === 'custom' && !locked ? (
         <input
           className="field"
           id={`custom-${cp.id}`}
@@ -253,6 +290,19 @@ export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo,
           }
         />
       )}
+
+      {frozen && entry && (entry.mood || entry.note || entry.photos?.length) ? (
+        <>
+          <h3 className="section-title">Journal</h3>
+          {entry.mood ? <Hearts value={entry.mood} /> : null}
+          {entry.note && <p className="journal-readonly">{entry.note}</p>}
+          {entry.photos?.length ? (
+            <div className="photo-row">
+              <PhotoCarousel repo={repo} photos={entry.photos} />
+            </div>
+          ) : null}
+        </>
+      ) : null}
 
       {!locked && (
         <>

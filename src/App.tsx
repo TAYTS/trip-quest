@@ -23,6 +23,10 @@ import { JournalModal, SettingsModal, StampsModal } from './components/Panels';
 import { TripGate } from './components/TripGate';
 import { Window } from './components/Window';
 import { PixelEmoji, PixelSprite } from './components/Pixel';
+import { RecapScreen } from './components/Recap';
+import { GUIDE_ENABLED } from './lib/guide';
+import { loadRecap, subscribeRecap } from './lib/recapApi';
+import type { RecapData } from './lib/recap';
 
 type Modal =
   | { type: 'quest'; cp: Checkpoint }
@@ -30,6 +34,7 @@ type Modal =
   | { type: 'stamps' }
   | { type: 'settings' }
   | { type: 'goal' }
+  | { type: 'wrapped' }
   | null;
 
 interface Toast {
@@ -50,6 +55,8 @@ export default function App() {
   const [timing, setTiming] = useState(() => tripTiming());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [focusDay, setFocusDay] = useState<number | null>(null);
+  // Trip Wrapped: once made, the journal is read-only (enforced in the database too).
+  const [recapState, setRecapState] = useState<{ tripId: string; data: RecapData | null } | null>(null);
   const toastId = useRef(0);
 
   const stats = useMemo(() => computeStats(entries), [entries]);
@@ -117,6 +124,23 @@ export default function App() {
       });
     });
   }, [repo]);
+
+  // Trip Wrapped: load it for this trip, and hear about it when the other phone makes it.
+  const recapTripId = GUIDE_ENABLED && repo?.kind === 'cloud' ? repo.tripId : undefined;
+  useEffect(() => {
+    if (!recapTripId) return;
+    let alive = true;
+    loadRecap(recapTripId)
+      .then((data) => alive && setRecapState({ tripId: recapTripId, data }))
+      .catch(() => undefined);
+    const stop = subscribeRecap(recapTripId, (data) => setRecapState({ tripId: recapTripId, data }));
+    return () => {
+      alive = false;
+      stop();
+    };
+  }, [recapTripId]);
+  const recap = recapState && recapState.tripId === recapTripId ? recapState.data : null;
+  const setRecap = (data: RecapData | null) => recapTripId && setRecapState({ tripId: recapTripId, data });
 
   // ------------------------------------------------------------ actions
   async function saveEntry(entry: Entry) {
@@ -242,6 +266,11 @@ export default function App() {
     setModal(current ? { type: 'quest', cp: current } : { type: 'goal' });
   };
   const undoIdx = lastClearedIndex(entries);
+  // The Wrapped button shows after the trip (or the last checkpoint), or any time in Test mode.
+  const showWrapped =
+    !!recapTripId &&
+    (!!recap || ((finished || timing.phase === 'after' || prefs.testMode || UNLOCK_ALL) && stats.done > 0));
+  const travellers = `${prefs.momName} & ${prefs.daughterName}`;
 
   return (
     <div className={`app theme-${theme}`}>
@@ -283,6 +312,18 @@ export default function App() {
           <button type="button" className="btn btn-hud" onClick={() => setModal({ type: 'stamps' })}>
             <PixelEmoji emoji="🏅" size={16} /> Stamps {badges.length}
           </button>
+          {showWrapped && (
+            <button
+              type="button"
+              className="btn btn-hud btn-wrapped"
+              onClick={() => {
+                sfx.click();
+                setModal({ type: 'wrapped' });
+              }}
+            >
+              <PixelEmoji emoji="🎁" size={16} /> Wrapped
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-hud icon-only"
@@ -368,6 +409,7 @@ export default function App() {
           author={authorName(prefs)}
           lock={lockFor(modal.cp, entries, timing.today, prefs.testMode)}
           canUndo={UNLOCK_ALL || CHECKPOINTS.findIndex((c) => c.id === modal.cp.id) === undoIdx}
+          frozen={!!recap}
           onSave={saveEntry}
           onClear={clearEntry}
           onClose={() => setModal(null)}
@@ -399,15 +441,33 @@ export default function App() {
           onClose={() => setModal(null)}
         />
       )}
+      {modal?.type === 'wrapped' && recapTripId && (
+        <RecapScreen
+          tripId={recapTripId}
+          entries={entries}
+          travellers={travellers}
+          recap={recap}
+          canDelete={prefs.testMode || UNLOCK_ALL}
+          onRecap={setRecap}
+          onClose={() => setModal(null)}
+        />
+      )}
       {modal?.type === 'goal' && (
         <Window
           onClose={() => setModal(null)}
           icon={<PixelEmoji emoji="🏆" size={16} />}
           title="Trip Complete!"
           footer={
-            <button type="button" className="btn btn-go" onClick={() => setModal({ type: 'journal' })}>
-              Open journal
-            </button>
+            <>
+              <button type="button" className="btn btn-ghost" onClick={() => setModal({ type: 'journal' })}>
+                Open journal
+              </button>
+              {showWrapped && (
+                <button type="button" className="btn btn-go" onClick={() => setModal({ type: 'wrapped' })}>
+                  🎁 Trip Wrapped
+                </button>
+              )}
+            </>
           }
         >
           <div className="goal">
