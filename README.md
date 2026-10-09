@@ -35,6 +35,74 @@ flat colours and a dark outline, then drawn as SVG so it stays sharp on any scre
 they start from the device's emoji font, icons look slightly different on iPhone and Android. The look is inspired by
 2D side-scrolling MMOs, but no assets from any existing game are used.
 
+## Features at a glance
+
+Screenshots are phone-sized (390×844) and taken from a test build with made-up journal entries, placeholder
+photos and canned Panda answers, so they show the layout, not real trip content.
+
+### The journey map
+
+<img src="docs/screenshots/journey-map.png" width="260" alt="Side-scrolling journey map" />
+
+A side-scrolling pixel world from START to GOAL: 30 checkpoints (10 days × morning / afternoon / night).
+The sky and skyline change as you go, the mother-daughter duo walks to the next signpost each time you clear
+one, and the HUD shows level, coins, stamps, the Journal and Trip Wrapped buttons.
+
+### Checkpoints: plan, journal and Panda Wishes
+
+<img src="docs/screenshots/checkpoint.png" width="260" alt="A checkpoint with the plan options" />
+<img src="docs/screenshots/panda-wishes-loading.png" width="260" alt="Panda Wishes while it looks things up" />
+<img src="docs/screenshots/panda-wishes-answer.png" width="260" alt="A Panda Wishes answer with sources" />
+
+- Each checkpoint shows the planned activity, alternatives, "Rest at the hotel" and "Did something else", with
+  directions and travel time. Chinese place and food names are kept in Chinese (handy for taxi drivers and menus).
+- **Panda Wishes** (optional, needs the `ask-guide` Supabase function): ask the Panda for a food or place tip. You
+  get a limited number of wishes per day, shown as bamboo shoots. While it searches, the Panda animates and a
+  loading box shows; answers come with source links and an "Add to notes" button.
+  It only appears on checkpoints that are still open.
+- Journal: mood hearts, notes and up to 3 photos per checkpoint.
+
+### Cleared and skipped checkpoints
+
+<img src="docs/screenshots/cleared-checkpoint.png" width="260" alt="A cleared checkpoint, plan choice fixed" />
+<img src="docs/screenshots/skipped-checkpoint.png" width="260" alt="A skipped checkpoint" />
+
+Once a checkpoint is cleared or skipped, the plan you picked is fixed. You can still edit the notes, hearts and
+photos until the recap is made. Only the most recently cleared checkpoint can be undone.
+
+### Trip Wrapped
+
+<img src="docs/screenshots/wrapped-maker.png" width="260" alt="Trip Wrapped maker" />
+<img src="docs/screenshots/wrapped-confirm.png" width="260" alt="Confirm step" />
+
+After the trip (or in Test mode) the Wrapped button lets you make a Spotify-Wrapped-style recap. Gemini reads the
+notes and photos, and the recap is saved once, so it is the same on both phones.
+
+<img src="docs/screenshots/wrapped-slide-1.png" width="200" alt="Intro" />
+<img src="docs/screenshots/wrapped-slide-2.png" width="200" alt="Numbers" />
+<img src="docs/screenshots/wrapped-slide-3.png" width="200" alt="Best shots" />
+<img src="docs/screenshots/wrapped-slide-4.png" width="200" alt="Top 5 moments" />
+<img src="docs/screenshots/wrapped-slide-5.png" width="200" alt="Travel personality" />
+<img src="docs/screenshots/wrapped-slide-6.png" width="200" alt="Closing note with PDF download" />
+
+Six slides: intro, trip in numbers, best shots (photo montage), top 5 moments, travel personality, and a closing
+note from the Panda with a **Download PDF** button. Tap right/left to move, hold to pause.
+
+### After the recap is made
+
+<img src="docs/screenshots/journal-read-only.png" width="260" alt="Read-only journal" />
+
+The journal becomes read-only (enforced in the database, not just the app), so the recap always matches what was
+written.
+
+### Settings and extras
+
+- Two save modes: this device only, or a synced trip shared by both phones through Supabase.
+- Photos, notes and mood hearts sync live between phones; export/import a JSON backup from the Journal.
+- Roll a die once per checkpoint for coins and chance cards, earn EXP, collect 12 stamps.
+- Retro sound effects (toggle in Settings).
+- *Test mode: ignore dates* is only shown in builds with `VITE_ENABLE_TEST_MODE=true`.
+
 ## Run locally
 
 ```bash
