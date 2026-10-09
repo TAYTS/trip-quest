@@ -536,7 +536,7 @@ function RecapMaker({
         </div>
         {step.kind === 'idle' ? (
           <p className="wr-intro-text">
-            The Panda will collect your memories fragment during the trip and create a recap for you to remember!
+            The Panda will collect your memory fragments during the trip and create a recap for you to remember!
           </p>
         ) : (
           <div className="wr-progress" role="status">
