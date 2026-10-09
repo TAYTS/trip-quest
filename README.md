@@ -9,7 +9,8 @@ mother-daughter trip (Sat 24 Oct – Mon 2 Nov 2026).
   skyline changes from Chongqing towers to Chengdu bamboo, and the mother-daughter duo
   walks to the next signpost each time you clear one (tap them to jump).
 - **Locks**: only the next checkpoint can be cleared or skipped; later ones are view-only.
-  A day also can't be cleared before its date (China time). Settings → *Test mode* turns
+  A day also can't be cleared before its date (China time). Settings → *Test mode* (only shown in builds with
+  `VITE_ENABLE_TEST_MODE=true`) turns
   the date lock off so you can try the game before the trip. Only the most recently
   cleared checkpoint can be undone; earlier ones can still be edited.
 - **Scrolling**: drag the little train along the track under the world (or tap the track)
@@ -44,7 +45,12 @@ npm run build        # type-check + production build into dist/
 
 Requires Node 20+.
 
-### Unlock everything for local testing
+### Test mode and unlocking everything
+
+Set `VITE_ENABLE_TEST_MODE=true` to show the *Test mode: ignore dates* switch in Settings (dates ignored, order lock kept).
+Without it the switch is hidden and test mode is always off.
+
+To unlock everything locally:
 
 Create `.env.local` with:
 

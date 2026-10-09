@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { CHECKPOINTS, DAYS, SLOT_LABEL, findOption, type Checkpoint } from '../data/itinerary';
 import { BADGES, type Entry, type EntryMap } from '../data/game';
 import type { Repo } from '../lib/repo';
-import type { Prefs } from '../lib/prefs';
+import { TEST_MODE_ENABLED, type Prefs } from '../lib/prefs';
 import { REQUIRE_TRIP, isCloudConfigured } from '../lib/supabase';
 import { fmtDate } from '../lib/time';
 import { Window } from './Window';
@@ -265,18 +265,22 @@ export function SettingsModal({
         />{' '}
         Retro sound effects
       </label>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={prefs.testMode}
-          onChange={(e) => setPrefs({ ...prefs, testMode: e.target.checked })}
-        />{' '}
-        Test mode: ignore dates
-      </label>
-      <p className="hint">
-        Days normally unlock on their date (China time). Turn on Test mode to try the game before the trip. Checkpoints
-        still unlock in order.
-      </p>
+      {TEST_MODE_ENABLED && (
+        <>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={prefs.testMode}
+              onChange={(e) => setPrefs({ ...prefs, testMode: e.target.checked })}
+            />{' '}
+            Test mode: ignore dates
+          </label>
+          <p className="hint">
+            Days normally unlock on their date (China time). Turn on Test mode to try the game before the trip. Checkpoints
+            still unlock in order.
+          </p>
+        </>
+      )}
 
       <h3 className="section-title">Save & sync</h3>
       <p className="hint">
