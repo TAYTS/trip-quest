@@ -65,8 +65,11 @@ src/
   lib/repo.ts         ← storage interface the UI talks to
   lib/localRepo.ts    ← localStorage implementation
   lib/cloudRepo.ts    ← Supabase implementation (anonymous auth + join code + realtime)
-  components/         ← Timeline (side-scroller), QuestModal, Journal/Stamps/Settings panels, pixel sprites
+  lib/recap.ts        ← Trip Wrapped ranking, stats and montage picks (plain calculation)
+  lib/recapPdf.ts     ← turns the Wrapped slides into a PDF on the phone
+  components/         ← Timeline (side-scroller), QuestModal, Journal/Stamps/Settings panels, Recap, pixel sprites
 supabase/schema.sql   ← tables, RLS policies, RPCs, photo bucket
+supabase/functions/   ← ask-guide (Panda Wishes) and trip-recap (Trip Wrapped) Edge Functions
 ```
 
 ## Deploy to Vercel (local mode)
@@ -183,6 +186,46 @@ SQL files in `supabase/migrations/` (one timestamped file per change) and functi
 Secrets such as `GEMINI_API_KEY` are never deployed from the repo, so step 3's `supabase secrets set` stays a
 one-time manual step either way.
 
+## Trip Wrapped (end-of-trip recap, optional)
+
+A Spotify-Wrapped-style recap: 6 story slides you tap through, and a **Download PDF** button on the last one.
+
+1. Intro · 2. Your trip in numbers · 3. Your best shots (5 photos) · 4. Your top 5 moments ·
+5. Your travel personality · 6. A closing note from the Panda + Download PDF
+
+**How it's made.** The 🎁 Wrapped button appears in the top bar after the last checkpoint, after 2 Nov
+(China time), or any time in Test mode. Tapping "Make our Wrapped":
+
+1. The `trip-recap` Edge Function sends each cleared checkpoint's note, hearts and photos (up to 3) to Gemini,
+   which returns the note's mood (−1 to 1), up to 3 feelings, a short quote copied from the note (checked to be
+   really in it), a caption and a score for each photo (happy faces, wow, sharpness). Each result is saved in
+   `recap_moments` and never asked for again.
+2. The game ranks the moments: 40% your hearts, 25% the note's mood, 25% the best photo, 10% effort (photos
+   and words added). The montage takes the 5 best photos that aren't already in the top 5.
+3. Gemini writes the personality title, its description and the closing note from those facts.
+4. The finished recap is saved once in `recaps`. **From then on the journal is read-only for both phones**
+   (the database refuses entry and photo changes). Both phones always see the same recap.
+
+**Set it up:** it uses the same `GEMINI_API_KEY` secret and `VITE_ENABLE_GUIDE=true` switch as Panda Wishes. Then:
+
+```bash
+# 1. In the Supabase SQL Editor, run supabase/schema.sql again (adds recap_moments, recaps and the journal lock).
+# 2. Deploy the function:
+supabase functions deploy trip-recap
+```
+
+Optional secret: `RECAP_MODEL` to use a different Gemini model for the recap (default: the same as `GEMINI_MODEL`).
+
+**Things to know**
+
+- Notes and photos of the cleared checkpoints are sent to Google. On a paid (billing-enabled) Gemini key, Google
+  doesn't use them to improve its products; on the free tier it may.
+- Cost is small: about 30 calls with up to 90 resized photos, roughly US$0.10 or less on Gemini Flash-Lite's paid
+  price. That is an estimate, not a measured run.
+- In Test mode (or with `VITE_UNLOCK_ALL`), the last slide also shows "Delete this recap (test)", which removes the
+  recap and its saved analysis and unlocks the journal again, so a test run before the trip doesn't block the real one.
+- The PDF is made on the phone (nothing is uploaded): 6 portrait pages, about 1 MB with photos.
+
 ## Known limits
 
 - In local mode, photos are stored as small (640 px) JPEGs in localStorage. Browsers allow
@@ -197,4 +240,3 @@ one-time manual step either way.
 ## Ideas for later
 
 - Add a PWA manifest so it can be installed to the home screen and work offline.
-- Generate an end-of-trip "storybook" page you can share.
