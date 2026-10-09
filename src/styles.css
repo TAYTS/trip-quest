@@ -1050,6 +1050,26 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+/* Bamboo scrollbar: a green stalk with dark joints as the thumb, on a pale track.
+   Chrome/Safari use the ::-webkit-scrollbar rules; Firefox (no pseudo-elements) gets plain green colours. */
+.window-body::-webkit-scrollbar {
+  width: 14px;
+}
+.window-body::-webkit-scrollbar-track {
+  background: #efe6d4;
+  border-left: 2px solid var(--ink);
+}
+.window-body::-webkit-scrollbar-thumb {
+  border: 2px solid var(--ink);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 22px, var(--ink) 22px 24px),
+    linear-gradient(90deg, #a8e278 0 35%, #5bbf4a 35% 70%, #2f7d32 70%);
+}
+@supports not selector(::-webkit-scrollbar) {
+  .window-body {
+    scrollbar-color: #5bbf4a #efe6d4;
+  }
+}
 .window-footer {
   display: flex;
   gap: 8px;

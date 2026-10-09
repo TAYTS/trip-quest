@@ -21,6 +21,7 @@ const PALETTE: Record<string, string> = {
   m: '#fff2a8', // moon
   g: '#5bbf4a',
   G: '#2f7d32',
+  l: '#a8e278', // light green (bamboo highlight)
 };
 
 // prettier-ignore
@@ -60,6 +61,20 @@ export const SPRITES = {
     '..jjj..jjj..',
     '..jjj..jjj..',
     '.wwww..wwww.',
+  ],
+  bamboo: [
+    '.kkkkk...',
+    '.klgGk...',
+    '.klgGk.kk',
+    '.klgGkkgk',
+    'kkkkkkgk.',
+    '.klgGkk..',
+    '.klgGk...',
+    '.klgGk...',
+    'kkkkkkk..',
+    '.klgGk...',
+    '.klgGk...',
+    '.kkkkk...',
   ],
   panda: [
     '..kk....kk..',

@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { askGuide, getWishes, type GuideContext, type GuideSource, type Wishes } from '../lib/guide';
 import { sfx } from '../lib/sfx';
-import { PixelEmoji, PixelSprite } from './Pixel';
+import { PixelSprite } from './Pixel';
 
 const QUICK = ['Where to eat nearby?', 'A rainy-day backup?', 'What to order here?', 'Something quick and cheap?'];
 
@@ -21,7 +21,7 @@ function WishStars({ wishes }: { wishes: Wishes }) {
       <span className="wish-stars" aria-hidden="true">
         {Array.from({ length: wishes.limit }, (_, i) => (
           <span key={i} className={i < left ? 'wish-star' : 'wish-star off'}>
-            <PixelEmoji emoji="⭐" size={16} />
+            <PixelSprite name="bamboo" scale={2} />
           </span>
         ))}
       </span>

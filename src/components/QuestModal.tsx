@@ -231,7 +231,7 @@ export function QuestModal({ checkpoint: cp, entry, repo, author, lock, canUndo,
         </div>
       )}
 
-      {GUIDE_ENABLED && repo.tripId && (
+      {GUIDE_ENABLED && repo.tripId && !locked && (
         <GuideBox
           tripId={repo.tripId}
           context={{
