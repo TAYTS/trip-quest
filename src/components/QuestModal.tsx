@@ -1,6 +1,6 @@
 // The checkpoint "quest window": pick what you did, roll the chance die, and
 // write the journal entry (mood, note, photo). Locked checkpoints are view-only.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CHECKPOINTS, SLOT_LABEL, dayOf, getOptions, findOption, type Checkpoint } from '../data/itinerary';
 import { MAX_PHOTOS, drawChance, findCard, type Entry, type EntryStatus } from '../data/game';
 import type { Lock } from '../data/locks';
@@ -13,6 +13,22 @@ import { ConfirmButton } from './ConfirmButton';
 import { PhotoCarousel } from './PhotoCarousel';
 import { GuideBox } from './GuideBox';
 import { GUIDE_ENABLED } from '../lib/guide';
+
+const MAX_NOTE = 10000; // the database refuses longer notes
+
+/** Adds a Panda tip under the existing note without ever going past the limit. */
+function appendTip(note: string, tip: string): string {
+  const head = note ? `${note}\n\n` : '';
+  let add = `Panda tip:\n${tip}`;
+  const room = MAX_NOTE - head.length;
+  if (add.length > room) {
+    add = add.slice(0, Math.max(0, room - 1));
+    // Don't cut an emoji in half.
+    if (/[\uD800-\uDBFF]$/.test(add)) add = add.slice(0, -1);
+    add = room > 0 ? `${add}…` : '';
+  }
+  return head + add;
+}
 
 interface Props {
   checkpoint: Checkpoint;
@@ -64,6 +80,15 @@ export function QuestModal({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const heartsRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  // Shown under the hearts when someone tries to clear a stop without rating it.
+  const [ratingNudge, setRatingNudge] = useState(0); // counts up on every try, so the wiggle replays
+
+  // Errors appear at the bottom of a long scrolling window, so bring them into view.
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [error]);
 
   const chosen = findOption(cp, choiceId) ?? options[0];
   const card = findCard(chanceId);
@@ -108,6 +133,15 @@ export function QuestModal({
 
   async function submit(status: EntryStatus) {
     if (locked) return;
+    if (status === 'done' && !mood) {
+      setRatingNudge((n) => n + 1);
+      heartsRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+    if (note.trim().length > MAX_NOTE) {
+      setError(`The note is too long (${note.trim().length} of ${MAX_NOTE} characters). Shorten it and try again.`);
+      return;
+    }
     if (choiceId === 'custom' && !customTitle.trim() && status === 'done') {
       setError('Write what you did in the "Did something else" box.');
       return;
@@ -140,7 +174,7 @@ export function QuestModal({
       ? `Here's what ${entry.author ? `${entry.author} wrote` : 'you wrote'}. It's part of your Trip Wrapped now!`
       : 'Your Trip Wrapped is made, so this stop stays as it is.'
     : entry
-      ? `You cleared this one${entry.author ? ` (written by ${entry.author})` : ''}. Edit anything you like!`
+      ? `You ${entry.status === 'skipped' ? 'skipped' : 'cleared'} this one${entry.author ? ` (written by ${entry.author})` : ''}. Edit anything you like!`
       : lock.kind === 'order'
         ? "That's further down the road! Here's a peek at the plan."
         : lock.kind === 'date'
@@ -285,9 +319,7 @@ export function QuestModal({
               .map((c) => `${SLOT_LABEL[c.slot].en}: ${c.options[0].title}`)
               .join('. '),
           }}
-          onAddToNotes={
-            locked ? undefined : (t) => setNote((n) => (n ? `${n}\n\n` : '') + `Panda tip:\n${t}`.slice(0, 4000))
-          }
+          onAddToNotes={locked ? undefined : (t) => setNote((n) => appendTip(n, t))}
         />
       )}
 
@@ -336,13 +368,21 @@ export function QuestModal({
 
           <h3 className="section-title">Journal</h3>
           <label className="label">How was it?</label>
-          <Hearts
-            value={mood}
-            onChange={(v) => {
-              sfx.click();
-              setMood(v || undefined);
-            }}
-          />
+          <div ref={heartsRef}>
+            <Hearts
+              value={mood}
+              onChange={(v) => {
+                sfx.click();
+                setMood(v || undefined);
+                if (v) setRatingNudge(0);
+              }}
+            />
+          </div>
+          {ratingNudge > 0 && !mood && (
+            <p key={ratingNudge} className="label nudge" role="alert">
+              Please rate the session
+            </p>
+          )}
           <label className="label" htmlFor={`note-${cp.id}`}>
             Notes · writing as {author}
           </label>
@@ -350,7 +390,7 @@ export function QuestModal({
             id={`note-${cp.id}`}
             className="field"
             rows={4}
-            maxLength={4000}
+            maxLength={MAX_NOTE}
             placeholder="What happened? What did you eat? Funniest moment?"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -377,7 +417,7 @@ export function QuestModal({
       )}
 
       {error && (
-        <p className="error" role="alert">
+        <p className="error" role="alert" ref={errorRef}>
           {error}
         </p>
       )}

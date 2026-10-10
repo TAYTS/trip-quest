@@ -25,7 +25,7 @@ const GAP = 128; // between checkpoints
 const DAY_GAP = 76; // extra room for each day banner
 const PAD_L = 120;
 const PAD_R = 150;
-const LAST = CHECKPOINTS.length + 1; // stop indexes: 0 START, 1..30 checkpoints, 31 GOAL
+const LAST = CHECKPOINTS.length + 1; // stop indexes: 0 START, 1..N checkpoints, N+1 GOAL
 
 const dayIndex = (i: number) => (i === 0 ? 0 : i <= CHECKPOINTS.length ? CHECKPOINTS[i - 1].day : DAYS.length + 1);
 export const stopX = (i: number) => PAD_L + i * GAP + dayIndex(i) * DAY_GAP;
@@ -64,10 +64,10 @@ function sceneryAt(i: number): Scenery {
   if (i === 0) return 'cq';
   if (i === LAST) return 'home';
   const cp = CHECKPOINTS[i - 1];
-  if (cp.day <= 4) return 'cq';
-  if (cp.day === 5) return cp.slot === 'morning' ? 'cq' : cp.slot === 'afternoon' ? 'rail' : 'cd';
-  if (cp.day <= 9) return 'cd';
-  return cp.slot === 'morning' ? 'cd' : cp.slot === 'afternoon' ? 'air' : 'home';
+  if (cp.day <= 3) return 'cq';
+  if (cp.day === 4) return cp.slot === 'morning' ? 'cq' : cp.slot === 'afternoon' ? 'rail' : 'cd';
+  if (cp.day <= 8) return 'cd';
+  return 'air'; // last day: the morning flight home
 }
 
 // Deterministic random so the skyline is the same on every visit.

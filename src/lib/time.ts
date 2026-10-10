@@ -14,8 +14,8 @@ export function tripTiming(now = new Date()) {
   const today = chinaToday(now);
   const todayDay = DAYS.find((d) => d.date === today)?.day ?? null;
   const msPerDay = 86_400_000;
-  const daysUntil = Math.round((Date.parse(TRIP.start) - Date.parse(today)) / msPerDay);
-  const phase: 'before' | 'during' | 'after' = todayDay ? 'during' : daysUntil > 0 ? 'before' : 'after';
+  const daysUntil = Math.round((Date.parse(TRIP.departure) - Date.parse(today)) / msPerDay);
+  const phase: 'before' | 'during' | 'after' = todayDay ? 'during' : today < TRIP.start ? 'before' : 'after';
   return { today, todayDay, daysUntil, phase };
 }
 

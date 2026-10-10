@@ -128,7 +128,7 @@ export interface Stats {
   coins: number;
   cleared: number; // done + skipped
   done: number;
-  position: number; // index into CHECKPOINTS of the first open checkpoint (30 = finished)
+  position: number; // index into CHECKPOINTS of the first open checkpoint (CHECKPOINTS.length = finished)
 }
 
 export function computeStats(entries: EntryMap): Stats {
@@ -190,28 +190,28 @@ export const BADGES: Badge[] = [
     icon: '🐼',
     name: 'Panda Pal',
     hint: 'Visit the Panda Base',
-    earned: (m) => choseDone(m, 'd6-morning', 'panda-base'),
+    earned: (m) => choseDone(m, 'd5-morning', 'panda-base'),
   },
   {
     id: 'river-night',
     icon: '⛵',
     name: 'Two-River Night',
     hint: 'Take both night cruises',
-    earned: (m) => choseDone(m, 'd3-night', 'two-rivers') && choseDone(m, 'd9-night', 'jinjiang'),
+    earned: (m) => choseDone(m, 'd2-night', 'two-rivers') && choseDone(m, 'd8-night', 'jinjiang'),
   },
   {
     id: 'face-changer',
     icon: '🎭',
     name: 'Face Changer',
     hint: 'Watch the face-changing opera',
-    earned: (m) => choseDone(m, 'd7-night', 'face-change'),
+    earned: (m) => choseDone(m, 'd6-night', 'face-change'),
   },
   {
     id: 'hanfu-hero',
     icon: '👘',
     name: 'Hanfu Duo',
     hint: 'Do the hanfu photoshoot',
-    earned: (m) => choseDone(m, 'd8-morning', 'hanfu'),
+    earned: (m) => choseDone(m, 'd7-morning', 'hanfu'),
   },
   {
     id: 'sweet-tooth',
@@ -259,7 +259,7 @@ export const BADGES: Badge[] = [
     id: 'trip-clear',
     icon: '🏆',
     name: 'Trip Clear!',
-    hint: 'Clear all 30 checkpoints',
+    hint: `Clear all ${CHECKPOINTS.length} checkpoints`,
     earned: (m) => CHECKPOINTS.every((cp) => m[cp.id]),
   },
 ];

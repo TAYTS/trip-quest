@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CHECKPOINTS, SLOT_LABEL, dayOf, type Checkpoint } from './data/itinerary';
+import { CHECKPOINTS, DAYS, SLOT_LABEL, dayOf, type Checkpoint } from './data/itinerary';
 import { EXP_PER_LEVEL, computeStats, earnedBadges, entryExp, type Entry, type EntryMap } from './data/game';
 import { UNLOCK_ALL, lastClearedIndex, lockFor } from './data/locks';
 import type { Repo } from './lib/repo';
@@ -257,7 +257,7 @@ export default function App() {
   const current = CHECKPOINTS[stats.position];
   const finished = !current;
   const theme = finished ? 'goal' : current.slot;
-  const currentDay = current?.day ?? 10;
+  const currentDay = current?.day ?? DAYS.length;
   const shownDay = selectedDay ?? currentDay;
   const currentLock = current ? lockFor(current, entries, timing.today, prefs.testMode) : null;
   const openQuest = (cp: Checkpoint) => setModal({ type: 'quest', cp });
@@ -280,7 +280,10 @@ export default function App() {
             TRIP<span>QUEST</span>
           </h1>
           <span className="phase">
-            {timing.phase === 'before' && `Departs in ${timing.daysUntil} day${timing.daysUntil === 1 ? '' : 's'}`}
+            {timing.phase === 'before' &&
+              (timing.daysUntil > 0
+                ? `Departs in ${timing.daysUntil} day${timing.daysUntil === 1 ? '' : 's'}`
+                : 'Flight tonight!')}
             {timing.phase === 'during' && `Today is Day ${timing.todayDay}`}
             {timing.phase === 'after' && 'Trip memories'}
           </span>

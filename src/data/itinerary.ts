@@ -1,7 +1,7 @@
-// Trip plan, mirrored from the Notion page "重庆·成都 10日母女游" (updated 2026-10-06).
+// Trip plan, mirrored from the Notion page "重庆·成都 10日母女游" (updated 2026-10-06; trip changed on 2026-10-11 to start on 25 Oct and end on the morning flight).
 // All text is English. Chinese appears only for place names: in `place` (shown under
 // the title, handy for taxi drivers) and in brackets after a place's first mention.
-// Each day has three checkpoints (morning / afternoon / night). "Rest" and
+// Each day has three checkpoints (morning / afternoon / night), except the last day: its flight is in the morning. "Rest" and
 // "Did something else" are added to every checkpoint by getOptions().
 
 export type Slot = 'morning' | 'afternoon' | 'night';
@@ -52,7 +52,8 @@ export interface Day {
 
 export const TRIP = {
   name: 'Chongqing → Chengdu',
-  start: '2026-10-24',
+  departure: '2026-10-24', // the flight leaves on this night and lands just after midnight
+  start: '2026-10-25', // first day in Chongqing
   end: '2026-11-02',
   timezone: 'Asia/Shanghai',
 };
@@ -60,15 +61,14 @@ export const TRIP = {
 export const DAYS: Day[] = [
   {
     day: 1,
-    date: '2026-10-24',
-    weekday: 'Sat',
+    date: '2026-10-25',
+    weekday: 'Sun',
     city: 'Chongqing',
-    title: 'Arrive in the Mountain City',
-    color: '#e2574c',
+    title: 'Midnight arrival & easy day',
+    color: '#f08a3c',
   },
-  { day: 2, date: '2026-10-25', weekday: 'Sun', city: 'Chongqing', title: 'Free & easy day', color: '#f08a3c' },
   {
-    day: 3,
+    day: 2,
     date: '2026-10-26',
     weekday: 'Mon',
     city: 'Chongqing',
@@ -76,7 +76,7 @@ export const DAYS: Day[] = [
     color: '#e0a92e',
   },
   {
-    day: 4,
+    day: 3,
     date: '2026-10-27',
     weekday: 'Tue',
     city: 'Chongqing',
@@ -84,18 +84,18 @@ export const DAYS: Day[] = [
     color: '#7fb33a',
   },
   {
-    day: 5,
+    day: 4,
     date: '2026-10-28',
     weekday: 'Wed',
     city: 'On the move',
     title: 'Bullet train to Chengdu',
     color: '#3fb8af',
   },
-  { day: 6, date: '2026-10-29', weekday: 'Thu', city: 'Chengdu', title: 'Panda morning', color: '#4f86c6' },
-  { day: 7, date: '2026-10-30', weekday: 'Fri', city: 'Chengdu', title: 'Slow-life day', color: '#7b6fd0' },
-  { day: 8, date: '2026-10-31', weekday: 'Sat', city: 'Chengdu', title: 'Hanfu & pastries', color: '#c26dbc' },
-  { day: 9, date: '2026-11-01', weekday: 'Sun', city: 'Chengdu', title: 'Shopping finale', color: '#e06c9f' },
-  { day: 10, date: '2026-11-02', weekday: 'Mon', city: 'On the move', title: 'Homeward', color: '#8d6e63' },
+  { day: 5, date: '2026-10-29', weekday: 'Thu', city: 'Chengdu', title: 'Panda morning', color: '#4f86c6' },
+  { day: 6, date: '2026-10-30', weekday: 'Fri', city: 'Chengdu', title: 'Slow-life day', color: '#7b6fd0' },
+  { day: 7, date: '2026-10-31', weekday: 'Sat', city: 'Chengdu', title: 'Hanfu & pastries', color: '#c26dbc' },
+  { day: 8, date: '2026-11-01', weekday: 'Sun', city: 'Chengdu', title: 'Shopping finale', color: '#e06c9f' },
+  { day: 9, date: '2026-11-02', weekday: 'Mon', city: 'On the move', title: 'Flight home', color: '#8d6e63' },
 ];
 
 const o = (
@@ -116,7 +116,7 @@ const o = (
 });
 
 export const CHECKPOINTS: Checkpoint[] = [
-  // ---------------- Day 1 · Sat 10/24 · Chongqing ----------------
+  // ---------------- Day 1 · Sun 10/25 · Chongqing ----------------
   {
     id: 'd1-morning',
     day: 1,
@@ -125,68 +125,20 @@ export const CHECKPOINTS: Checkpoint[] = [
       o(
         'taxi-hotel',
         '✈️',
-        'Land at the airport, taxi to the hotel',
-        'Land at Chongqing Jiangbei Airport (重庆江北国际机场). The hotel is IntercityHotel Jiefangbei at 107 Minquan Road (民权路107号), beside Jiaochangkou (较场口) metro Exit 10B. Check-in from 15:00; leave bags at the front desk if you arrive early.',
+        'Land after midnight, taxi to the hotel',
+        'The flight leaves on 24 Oct night and lands just after midnight. Land at Chongqing Jiangbei Airport (重庆江北国际机场) and taxi to IntercityHotel Jiefangbei at 107 Minquan Road (民权路107号), beside Jiaochangkou (较场口) metro Exit 10B. The metro has most likely stopped running by then, so take a taxi. Tell the hotel you arrive after midnight.',
         {
           place: '重庆解放碑步行街城际酒店',
           transport: 'Taxi ~22 km, ~30 min (easiest with luggage).',
           tags: ['travel'],
         },
       ),
-      o('metro-hotel', '🚇', 'Metro to the hotel', 'Cheaper, but there are stairs and a transfer with luggage.', {
-        place: '较场口站',
-        transport: 'Line 3 → change at Lianglukou (两路口) → Line 1 → Jiaochangkou (较场口), ~45 min.',
-        kind: 'optional',
-        tags: ['travel'],
-      }),
-    ],
-  },
-  {
-    id: 'd1-afternoon',
-    day: 1,
-    slot: 'afternoon',
-    options: [
-      o(
-        'jfb-tangyuan',
-        '🍡',
-        'Jiefangbei stroll & 山城小汤圆',
-        'Slow walk around Jiefangbei. Afternoon tea is 山城小汤圆 (sweet rice balls) instead of coffee.',
-        { place: '解放碑', transport: 'Walk ~5 min from the hotel.', tags: ['sweet', 'walk'] },
-      ),
-    ],
-  },
-  {
-    id: 'd1-night',
-    day: 1,
-    slot: 'night',
-    options: [
-      o(
-        'qiansimen',
-        '🌉',
-        'Hongyadong lights from Qiansimen Bridge',
-        'See the whole lit-up Hongyadong (洪崖洞) from the middle of the bridge; no need to climb inside. Saturday night is busy, so skip it if tired. The Day 3 cruise covers this view too.',
-        {
-          place: '千厮门大桥',
-          transport:
-            'Walk ~10 min to Hongyadong 11F on Cangbai Road (沧白路), then a short flight of stairs down to the bridge walkway. Back: walk ~15 min or taxi.',
-          tags: ['night-view', 'walk'],
-        },
-      ),
-    ],
-  },
-
-  // ---------------- Day 2 · Sun 10/25 · Chongqing ----------------
-  {
-    id: 'd2-morning',
-    day: 2,
-    slot: 'morning',
-    options: [
       o(
         'sleep-in-2',
         '😴',
         'Sleep in',
-        'First full day, so no alarms. Sunday crowds are everywhere, so there are no queue-heavy plans today.',
-        { tags: ['rest'] },
+        'Late arrival, so no alarms. Sunday crowds are everywhere, so there are no queue-heavy plans today.',
+        { kind: 'optional', tags: ['rest'] },
       ),
       o(
         'eling',
@@ -203,8 +155,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd2-afternoon',
-    day: 2,
+    id: 'd1-afternoon',
+    day: 1,
     slot: 'afternoon',
     options: [
       o(
@@ -234,8 +186,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd2-night',
-    day: 2,
+    id: 'd1-night',
+    day: 1,
     slot: 'night',
     options: [
       o(
@@ -248,10 +200,10 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 3 · Mon 10/26 · Chongqing ----------------
+  // ---------------- Day 2 · Mon 10/26 · Chongqing ----------------
   {
-    id: 'd3-morning',
-    day: 3,
+    id: 'd2-morning',
+    day: 2,
     slot: 'morning',
     options: [
       o(
@@ -281,8 +233,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd3-afternoon',
-    day: 3,
+    id: 'd2-afternoon',
+    day: 2,
     slot: 'afternoon',
     options: [
       o(
@@ -295,8 +247,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd3-night',
-    day: 3,
+    id: 'd2-night',
+    day: 2,
     slot: 'night',
     options: [
       o(
@@ -314,10 +266,10 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 4 · Tue 10/27 · Chongqing ----------------
+  // ---------------- Day 3 · Tue 10/27 · Chongqing ----------------
   {
-    id: 'd4-morning',
-    day: 4,
+    id: 'd3-morning',
+    day: 3,
     slot: 'morning',
     options: [
       o(
@@ -335,8 +287,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd4-afternoon',
-    day: 4,
+    id: 'd3-afternoon',
+    day: 3,
     slot: 'afternoon',
     options: [
       o(
@@ -352,8 +304,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd4-night',
-    day: 4,
+    id: 'd3-night',
+    day: 3,
     slot: 'night',
     options: [
       o(
@@ -366,10 +318,10 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 5 · Wed 10/28 · Chongqing → Chengdu ----------------
+  // ---------------- Day 4 · Wed 10/28 · Chongqing → Chengdu ----------------
   {
-    id: 'd5-morning',
-    day: 5,
+    id: 'd4-morning',
+    day: 4,
     slot: 'morning',
     options: [
       o(
@@ -382,8 +334,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd5-afternoon',
-    day: 5,
+    id: 'd4-afternoon',
+    day: 4,
     slot: 'afternoon',
     options: [
       o(
@@ -408,8 +360,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd5-night',
-    day: 5,
+    id: 'd4-night',
+    day: 4,
     slot: 'night',
     options: [
       o(
@@ -422,10 +374,10 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 6 · Thu 10/29 · Chengdu ----------------
+  // ---------------- Day 5 · Thu 10/29 · Chengdu ----------------
   {
-    id: 'd6-morning',
-    day: 6,
+    id: 'd5-morning',
+    day: 5,
     slot: 'morning',
     options: [
       o(
@@ -442,14 +394,14 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd6-afternoon',
-    day: 6,
+    id: 'd5-afternoon',
+    day: 5,
     slot: 'afternoon',
     options: [o('nap-6', '😴', 'Nap at the hotel', 'Early start, so a proper 1–2 hour nap.', { tags: ['rest'] })],
   },
   {
-    id: 'd6-night',
-    day: 6,
+    id: 'd5-night',
+    day: 5,
     slot: 'night',
     options: [
       o(
@@ -467,10 +419,10 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 7 · Fri 10/30 · Chengdu ----------------
+  // ---------------- Day 6 · Fri 10/30 · Chengdu ----------------
   {
-    id: 'd7-morning',
-    day: 7,
+    id: 'd6-morning',
+    day: 6,
     slot: 'morning',
     options: [
       o(
@@ -499,8 +451,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd7-afternoon',
-    day: 7,
+    id: 'd6-afternoon',
+    day: 6,
     slot: 'afternoon',
     options: [
       o('massage-cd', '💆', 'Mother-daughter massage', 'Foot or shoulder massage together. Confirm the price first.', {
@@ -509,8 +461,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd7-night',
-    day: 7,
+    id: 'd6-night',
+    day: 6,
     slot: 'night',
     options: [
       o(
@@ -528,10 +480,10 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 8 · Sat 10/31 · Chengdu ----------------
+  // ---------------- Day 7 · Sat 10/31 · Chengdu ----------------
   {
-    id: 'd8-morning',
-    day: 8,
+    id: 'd7-morning',
+    day: 7,
     slot: 'morning',
     options: [
       o(
@@ -556,8 +508,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd8-afternoon',
-    day: 8,
+    id: 'd7-afternoon',
+    day: 7,
     slot: 'afternoon',
     options: [
       o(
@@ -574,8 +526,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd8-night',
-    day: 8,
+    id: 'd7-night',
+    day: 7,
     slot: 'night',
     options: [
       o(
@@ -588,10 +540,10 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 9 · Sun 11/1 · Chengdu ----------------
+  // ---------------- Day 8 · Sun 11/1 · Chengdu ----------------
   {
-    id: 'd9-morning',
-    day: 9,
+    id: 'd8-morning',
+    day: 8,
     slot: 'morning',
     options: [
       o('brunch', '🥞', 'Sleep in & brunch', 'Slow morning.', { tags: ['rest'] }),
@@ -610,8 +562,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd9-afternoon',
-    day: 9,
+    id: 'd8-afternoon',
+    day: 8,
     slot: 'afternoon',
     options: [
       o(
@@ -624,8 +576,8 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
   {
-    id: 'd9-night',
-    day: 9,
+    id: 'd8-night',
+    day: 8,
     slot: 'night',
     options: [
       o(
@@ -645,41 +597,19 @@ export const CHECKPOINTS: Checkpoint[] = [
     ],
   },
 
-  // ---------------- Day 10 · Mon 11/2 · Chengdu → Home ----------------
+  // ---------------- Day 9 · Mon 11/2 · Chengdu → Home (morning flight) ----------------
   {
-    id: 'd10-morning',
-    day: 10,
+    id: 'd9-morning',
+    day: 9,
     slot: 'morning',
     options: [
       o(
         'checkout',
         '🧳',
-        'Breakfast & check-out',
-        'Last breakfast. Check out by 12:00 and leave bags at the front desk.',
-        { tags: ['food'] },
+        'Breakfast, check-out & airport',
+        'The flight home is in the morning, so there is no time left in Chengdu. Have a quick breakfast, check out and go. Check the airport code on the ticket! TFU (Tianfu) is ~65 km: taxi ~70 min, ~¥200, or the airport bus under the IFS panda (~80 min). CTU (Shuangliu) is ~18 km: taxi 30–40 min.',
+        { place: '天府国际机场 / 双流国际机场', tags: ['food', 'travel'] },
       ),
-    ],
-  },
-  {
-    id: 'd10-afternoon',
-    day: 10,
-    slot: 'afternoon',
-    options: [
-      o(
-        'airport',
-        '✈️',
-        'To the airport',
-        'Check the airport code on the ticket! TFU (Tianfu) is ~65 km: taxi ~70 min, ~¥200, or the airport bus under the IFS panda (~80 min). CTU (Shuangliu) is ~18 km: taxi 30–40 min.',
-        { place: '天府国际机场 / 双流国际机场', tags: ['travel'] },
-      ),
-    ],
-  },
-  {
-    id: 'd10-night',
-    day: 10,
-    slot: 'night',
-    options: [
-      o('home', '🏠', 'Home sweet home', 'Unpack, rest, and flip through this journal together.', { tags: ['home'] }),
     ],
   },
 ];

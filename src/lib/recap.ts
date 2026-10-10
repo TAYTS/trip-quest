@@ -1,6 +1,6 @@
 // "Trip Wrapped": turns the journal + Gemini's per-checkpoint reading into the saved recap.
 // Everything here is plain calculation (no network), so it gives the same result every time.
-import { CHECKPOINTS, SLOT_LABEL, TRIP, dayOf, findOption, type Checkpoint } from '../data/itinerary';
+import { CHECKPOINTS, DAYS, SLOT_LABEL, TRIP, dayOf, findOption, type Checkpoint } from '../data/itinerary';
 import { computeStats, earnedBadges, type Entry, type EntryMap } from '../data/game';
 
 export const FEELINGS = [
@@ -211,7 +211,7 @@ export function summaryInput(
   const done = doneCheckpoints(entries);
 
   const days: string[] = [];
-  for (let d = 1; d <= 10; d++) {
+  for (let d = 1; d <= DAYS.length; d++) {
     const items = done.filter((x) => x.cp.day === d);
     if (!items.length) continue;
     const avg = items.reduce((s, x) => s + happiness(x.entry, analyses[x.cp.id]), 0) / items.length;
@@ -272,7 +272,7 @@ export function buildRecap(
   };
 }
 
-/** "24 Oct – 2 Nov 2026" */
+/** "25 Oct – 2 Nov 2026" */
 export function tripDates(): string {
   const f = (iso: string, year = false) =>
     new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', {

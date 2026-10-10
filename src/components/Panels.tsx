@@ -276,8 +276,8 @@ export function SettingsModal({
             Test mode: ignore dates
           </label>
           <p className="hint">
-            Days normally unlock on their date (China time). Turn on Test mode to try the game before the trip. Checkpoints
-            still unlock in order.
+            Days normally unlock on their date (China time). Turn on Test mode to try the game before the trip.
+            Checkpoints still unlock in order.
           </p>
         </>
       )}

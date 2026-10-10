@@ -779,7 +779,7 @@ body {
 }
 
 /* day chips */
-/* 10 days → two rows of five, so every day is visible without scrolling */
+/* 9 days → two rows of five (5 + 4), so every day is visible without scrolling */
 .day-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1108,6 +1108,35 @@ body {
   font-size: 8px;
   margin: 10px 0 6px;
   color: var(--ink-soft);
+}
+.nudge {
+  color: #d32f2f;
+  margin: 6px 0 0;
+  animation: wiggle 0.5s ease-in-out 1;
+}
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-6px) rotate(-1.5deg);
+  }
+  30% {
+    transform: translateX(6px) rotate(1.5deg);
+  }
+  45% {
+    transform: translateX(-5px) rotate(-1deg);
+  }
+  60% {
+    transform: translateX(5px) rotate(1deg);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  90% {
+    transform: translateX(2px);
+  }
 }
 .field {
   width: 100%;
