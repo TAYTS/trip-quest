@@ -32,7 +32,7 @@ create table if not exists public.entries (
   custom_title   text,
   status         text not null check (status in ('done', 'skipped')),
   mood           smallint check (mood between 1 and 5),
-  note           text check (char_length(note) <= 4000),
+  note           text check (char_length(note) <= 10000),
   dice           smallint check (dice between 1 and 6),
   chance_id      text,
   coins          integer not null default 0,
@@ -342,3 +342,8 @@ grant execute on function public.delete_recap(uuid) to authenticated;
 -- Only needed if you ran an older version of this file (one photo per entry) before.
 -- Safe to run again.
 alter table public.entries add column if not exists photo_paths text[] not null default '{}' check (cardinality(photo_paths) <= 3);
+
+-- Notes can be up to 10000 characters (it used to be 4000). If you created the table before this change,
+-- this swaps the old limit for the new one. Safe to run again.
+alter table public.entries drop constraint if exists entries_note_check;
+alter table public.entries add constraint entries_note_check check (char_length(note) <= 10000);
