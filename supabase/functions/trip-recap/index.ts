@@ -92,7 +92,7 @@ export default {
         if (!entry || entry.status !== 'done') return json({ error: 'That checkpoint was not cleared.' }, 400);
 
         const o = geminiOptions();
-        const note = typeof entry.note === 'string' ? entry.note.trim().slice(0, 4000) : '';
+        const note = typeof entry.note === 'string' ? entry.note.trim().slice(0, 10000) : '';
         const paths: string[] = Array.isArray(entry.photo_paths) ? entry.photo_paths.slice(0, 3) : [];
         if (!o && (note || paths.length)) {
           console.error('GEMINI_API_KEY is not set. Run: supabase secrets set GEMINI_API_KEY=...');

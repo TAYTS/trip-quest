@@ -4,7 +4,7 @@
 
 /** Who the guide is talking to. Edit this to change the advice (food, pace, interests). */
 export const TRAVELLER_PROFILE =
-  'a mother and her adult daughter visiting Chongqing and Chengdu, China (24 Oct to 2 Nov 2026). ' +
+  'a mother and her adult daughter visiting Chongqing and Chengdu, China (25 Oct to 2 Nov 2026). ' +
   'They want mild, non-spicy food, easy walking with little climbing, and enjoy cafes, desserts, ' +
   'shopping and relaxing. Historical sites are optional for them.';
 
