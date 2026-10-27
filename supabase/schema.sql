@@ -165,7 +165,7 @@ create policy "members read photos" on storage.objects
 -- that the recap hasn't been made yet.
 
 -- ------------------------------------------------------------------ AI guide quota
--- The ask-guide Edge Function calls use_guide_quota() before each Gemini request, so one trip
+-- The ask-guide Edge Function calls take_guide_wish() before each Gemini request, so one trip
 -- can only ask a limited number of questions ("wishes") per day (China time). Nobody can read or write
 -- this table directly: row-level security is on and there are no policies.
 create table if not exists public.guide_usage (
@@ -216,22 +216,79 @@ begin
 end;
 $$;
 
--- Gives one wish back when the guide failed to answer (Google down, rate limit, ...).
-create or replace function public.refund_guide_quota(p_trip uuid)
-returns void language plpgsql security definer set search_path = public as $$
+revoke all on function public.guide_quota_used(uuid) from public, anon;
+grant execute on function public.guide_quota_used(uuid) to authenticated;
+
+-- Wish tickets: a refund needs the ticket of a wish that was really spent.
+-- The first version let any trip member call a plain "refund one wish" function, so a member could
+-- refund over and over and never run out. Now take_guide_wish() hands back a random ticket (the
+-- Edge Function keeps it and never sends it to the browser), and refund_guide_wish() gives back
+-- only that one wish: once, within 15 minutes, and only to a member of that trip. So the counter can
+-- never go lower than the number of wishes that were spent and not refunded.
+create table if not exists public.guide_wishes (
+  ticket     uuid primary key default gen_random_uuid(),
+  trip_id    uuid not null references public.trips(id) on delete cascade,
+  day        date not null,
+  refunded   boolean not null default false,
+  created_at timestamptz not null default now()
+);
+alter table public.guide_wishes enable row level security;
+
+-- Spends one wish (same one-statement limit check as use_guide_quota) and returns the count and a ticket.
+-- Raises 'not a member of this trip' for outsiders and 'daily limit reached' once p_limit is hit.
+create or replace function public.take_guide_wish(p_trip uuid, p_limit integer)
+returns table (used_count integer, wish_ticket uuid) language plpgsql security definer set search_path = public as $$
+declare
+  v_day    date := (now() at time zone 'Asia/Shanghai')::date;
+  v_used   integer;
+  v_ticket uuid;
 begin
   if not public.is_trip_member(p_trip) then
     raise exception 'not a member of this trip' using errcode = '42501';
   end if;
-  update public.guide_usage set count = greatest(count - 1, 0)
-    where trip_id = p_trip and day = (now() at time zone 'Asia/Shanghai')::date;
+  insert into public.guide_usage (trip_id, day, count)
+  values (p_trip, v_day, 1)
+  on conflict (trip_id, day) do update set count = public.guide_usage.count + 1
+    where public.guide_usage.count < p_limit
+  returning count into v_used;
+  if v_used is null then
+    raise exception 'daily limit reached' using errcode = 'P0001';
+  end if;
+  insert into public.guide_wishes (trip_id, day) values (p_trip, v_day) returning guide_wishes.ticket into v_ticket;
+  return query select v_used, v_ticket;
 end;
 $$;
 
-revoke all on function public.guide_quota_used(uuid) from public, anon;
-revoke all on function public.refund_guide_quota(uuid) from public, anon;
-grant execute on function public.guide_quota_used(uuid) to authenticated;
-grant execute on function public.refund_guide_quota(uuid) to authenticated;
+-- Gives back the one wish that belongs to this ticket (the guide failed to answer: Google down, rate limit, ...).
+-- Does nothing for an unknown, already-used or expired ticket, or one from another trip.
+create or replace function public.refund_guide_wish(p_ticket uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  r record;
+begin
+  update public.guide_wishes w set refunded = true
+    where w.ticket = p_ticket
+      and not w.refunded
+      and w.created_at > now() - interval '15 minutes'
+      and public.is_trip_member(w.trip_id)
+    returning w.trip_id, w.day into r;
+  if not found then
+    return;
+  end if;
+  update public.guide_usage set count = greatest(count - 1, 0)
+    where trip_id = r.trip_id and day = r.day;
+end;
+$$;
+
+revoke all on function public.take_guide_wish(uuid, integer) from public, anon;
+revoke all on function public.refund_guide_wish(uuid) from public, anon;
+grant execute on function public.take_guide_wish(uuid, integer) to authenticated;
+grant execute on function public.refund_guide_wish(uuid) to authenticated;
+
+-- The old open refund function is removed. use_guide_quota() above is kept for now so a deployed ask-guide
+-- that has not been updated yet keeps working; once the new ask-guide is deployed you can drop it:
+--   drop function if exists public.use_guide_quota(uuid, integer);
+drop function if exists public.refund_guide_quota(uuid);
 
 -- ------------------------------------------------------------------ trip recap ("Trip Wrapped")
 -- recap_moments: Gemini's reading of each checkpoint (note mood, feelings, best photo, caption).

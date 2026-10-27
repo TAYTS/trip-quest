@@ -5,7 +5,8 @@
 // Supabase's secret store (set with `supabase secrets set GEMINI_API_KEY=...`).
 //
 // Who can call it: only signed-in players (auth: 'user'), and only for a trip they belong
-// to; the daily question limit per trip is enforced in the database (use_guide_quota).
+// to; the daily question limit per trip is enforced in the database (take_guide_wish), and a wish
+// is only given back (refund_guide_wish) with the ticket this function got when it spent it.
 import { withSupabase } from 'npm:@supabase/server@^1';
 import { GuideError, askGemini, parseRequest, parseTripId, type Grounding } from './guide.ts';
 
@@ -49,11 +50,17 @@ export default {
       return json({ error: 'The guide is not set up yet.' }, 503);
     }
 
-    // Count this question first (also checks the caller belongs to the trip).
-    const { data: used, error } = await ctx.supabase.rpc('use_guide_quota', {
+    // Count this question first (also checks the caller belongs to the trip). The database hands back a
+    // ticket for the wish; only this function holds it, so only a failure here can give the wish back.
+    const { data: taken, error } = await ctx.supabase.rpc('take_guide_wish', {
       p_trip: parsed.value.tripId,
       p_limit: limit,
     });
+    const first = (Array.isArray(taken) ? taken[0] : taken) as { used_count?: number; wish_ticket?: string } | null;
+    if (!error && (typeof first?.used_count !== 'number' || typeof first?.wish_ticket !== 'string')) {
+      console.error('take_guide_wish returned an unexpected result');
+      return json({ error: 'Could not check the question limit.' }, 500);
+    }
     if (error) {
       if (error.code === 'P0001')
         return json(
@@ -63,9 +70,11 @@ export default {
           429,
         );
       if (error.code === '42501') return json({ error: 'You are not part of this trip.' }, 403);
-      console.error('use_guide_quota failed:', error.code, error.message);
+      console.error('take_guide_wish failed:', error.code, error.message);
       return json({ error: 'Could not check the question limit.' }, 500);
     }
+    const used = first!.used_count!;
+    const ticket = first!.wish_ticket!;
 
     try {
       const { answer, sources, grounded } = await askGemini(parsed.value, {
@@ -78,8 +87,8 @@ export default {
       return json({ answer, sources, grounded, used, limit });
     } catch (e) {
       // The Panda did not answer, so the wish is given back.
-      const { error: refundError } = await ctx.supabase.rpc('refund_guide_quota', { p_trip: parsed.value.tripId });
-      if (refundError) console.error('refund_guide_quota failed:', refundError.code, refundError.message);
+      const { error: refundError } = await ctx.supabase.rpc('refund_guide_wish', { p_ticket: ticket });
+      if (refundError) console.error('refund_guide_wish failed:', refundError.code, refundError.message);
       if (e instanceof GuideError) return json({ error: e.message }, e.status);
       console.error('ask-guide failed:', e);
       return json({ error: 'Something went wrong.' }, 500);
