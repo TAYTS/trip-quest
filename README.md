@@ -193,8 +193,7 @@ limited to members.
 
 Each checkpoint can show a "Panda Wishes" box for food and place suggestions. Your party gets 10 wishes
 (shown as stars) per day, shared across the trip; they refill at midnight China time, and a wish is refunded if the
-guide fails. The browser never sees the
-Gemini key: it calls a Supabase Edge Function (`supabase/functions/ask-guide`) that checks the player's login and
+guide fails (the refund needs a one-time ticket that only the function holds, so players can't refund wishes themselves). The browser never sees the Gemini key: it calls a Supabase Edge Function (`supabase/functions/ask-guide`) that checks the player's login and
 trip membership, spends one wish, then calls Gemini. By default it uses Google's
 Antigravity agent with Google Search, which checks the web before answering. This is a preview feature
 and can take up to a minute per question.
