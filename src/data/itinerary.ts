@@ -1,4 +1,3 @@
-// Trip plan, mirrored from the Notion page "重庆·成都 10日母女游" (updated 2026-10-06; trip changed on 2026-10-11 to start on 25 Oct and end on the morning flight).
 // All text is English. Chinese appears only for place names: in `place` (shown under
 // the title, handy for taxi drivers) and in brackets after a place's first mention.
 // Each day has three checkpoints (morning / afternoon / night), except the last day: its flight is in the morning. "Rest" and
